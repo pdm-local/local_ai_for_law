@@ -1,0 +1,72 @@
+# ── Python ─────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── Virtual environment ─────────────────────────────────
+venv/
+.venv/
+env/
+.env/
+
+# ── Environment / secrets ───────────────────────────────
+.env
+.env.*
+!.env.example
+.jwt_secret
+secrets.json
+*.pid
+
+# ── Runtime data (not for version control) ─────────────
+data/
+users.json
+audit.log
+certs/
+rag_db/
+uploads/
+chat_history/
+overviews/
+doc_summaries/
+flashcards/
+groups.json
+settings.json
+
+# ── OS / editor noise ───────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~
+
+# ── Logs ────────────────────────────────────────────────
+*.log
+logs/
+.claude/
+PLAN.md
+CLAUDE.md
+IMPROVEMENTS.md
+future_improvements.md
+
+# ── Frontend build ──────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+
+# ── Misc runtime / OS ───────────────────────────────────
+nohup.out
+*.bak
+*.tmp
+*.sqlite3
+.python-version
+.node_version
+businessplan.md
+deploy/ollama-bundle/
+models/
+*.gguf

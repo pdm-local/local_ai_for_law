@@ -1,0 +1,25 @@
+/* ─── TOAST ────────────────────────────────────────────── */
+#toast-container { position:fixed; bottom:calc(18px + var(--safe-b)); right:calc(18px + var(--safe-r)); z-index:500; display:flex; flex-direction:column; gap:7px; pointer-events:none; }
+.toast-item {
+  display:flex; align-items:center; gap:9px;
+  padding:10px 14px; border-radius:10px; border:1px solid transparent;
+  font-size:var(--fs-xs); font-weight:500; box-shadow:var(--shadow);
+  pointer-events:auto;
+  animation:slideIn .2s ease-out;
+  max-width:340px;
+}
+@keyframes slideIn { from{opacity:0;transform:translateX(12px)} to{opacity:1;transform:none} }
+.toast-exit { animation:slideOut .2s ease-in forwards; }
+@keyframes slideOut { to{opacity:0;transform:translateX(12px)} }
+.toast-icon { font-size:var(--fs-sm); flex-shrink:0; }
+.toast-info    { background:var(--card2); border-color:var(--border2); color:var(--text); }
+.toast-success { background:linear-gradient(var(--green-dim), var(--green-dim)), var(--surface); border-color:var(--green-line); color:var(--green); }
+.toast-error   { background:linear-gradient(var(--red-dim), var(--red-dim)), var(--surface); border-color:var(--red-line); color:var(--red); }
+.toast-warn    { background:linear-gradient(var(--yellow-dim), var(--yellow-dim)), var(--surface); border-color:var(--yellow-line); color:var(--yellow); }
+.toast-action { padding:2px 8px; font-size:var(--fs-xs); font-weight:700; color:var(--accent-text); margin-left:8px; }
+.toast-close {
+  flex-shrink:0; width:28px; height:28px; margin:-4px -6px -4px 4px;
+  border:none; border-radius:var(--radius-sm); background:transparent;
+  color:inherit; font-size:var(--fs-lg); line-height:1; cursor:pointer;
+}
+.toast-close:hover { background:var(--card-hover); }

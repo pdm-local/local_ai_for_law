@@ -1,0 +1,85 @@
+# Dockerfile.appliance — a SINGLE self-contained pdm.ai appliance image.
+#
+# Unlike the lean dev `Dockerfile` (app only, talks to an external Ollama), this
+# bakes EVERYTHING into one image: the app + the Ollama server + the model
+# weights. `docker save` it, move the tarball to any box, `docker load` and
+# `docker run --gpus all` — no `ollama pull`, no internet, no compose.
+#
+# The only host requirement is the NVIDIA driver + nvidia-container-toolkit
+# (so `--gpus all` works). Build with scripts/build_appliance.sh, which first
+# makes the model bundle this Dockerfile COPYs in.
+#
+# Base is the official Ollama image (ships the ollama server + CUDA runtime libs).
+FROM ollama/ollama:latest
+
+# The app is imported as the package `local_ai_law.*` (app.py puts its
+# parent dir on sys.path), so the code MUST live at <root>/local_ai_law.
+# We mirror that exact layout at /app/local_ai_law; app.py then adds /app to
+# the path and the package imports resolve. The mutable data volume is /app/data.
+ENV OLLAMA_MODELS=/models \
+    OLLAMA_HOST=127.0.0.1:11434 \
+    HOME=/home/appuser \
+    PATH=/opt/venv/bin:$PATH \
+    APP_HOME=/app/local_ai_law \
+    RAG_DATA_DIR=/app/data \
+    RAG_USERS_FILE=/app/data/users.json \
+    RAG_AUDIT_LOG=/app/data/audit.log \
+    RAG_SETTINGS_FILE=/app/data/settings.json \
+    RAG_JWT_SECRET_FILE=/app/data/.jwt_secret
+
+# Which models the appliance ships with (must exist in the bundle). Defaults
+# match the app's .env / provision.sh; override via build args in build_appliance.sh.
+ARG RAG_CHAT_MODEL=qwen3.5:9b
+ARG RAG_EMBED_MODEL=qwen3-embedding:4b
+ENV RAG_CHAT_MODEL=${RAG_CHAT_MODEL} \
+    RAG_EMBED_MODEL=${RAG_EMBED_MODEL}
+
+# Python + the system libs the app needs (lxml: xml/xslt; crypto: ffi) + curl for the
+# healthcheck. No Pango/cairo: WeasyPrint (requirements-pdf.txt) is left out of the
+# default build, its hyphenation dictionaries are GPL/LGPL. Ollama base is Ubuntu, so
+# python3 is 3.10+ (the app's minimum). Use a venv to sidestep PEP 668.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      python3 python3-venv python3-pip curl \
+      libxml2 libxslt1.1 \
+      libffi-dev \
+ && python3 -m venv /opt/venv \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app/local_ai_law
+
+COPY requirements.txt .
+RUN /opt/venv/bin/pip install --no-cache-dir --upgrade pip \
+ && /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
+
+# Non-root app user, created BEFORE the big COPYs so `COPY --chown` sets ownership
+# inline — a later `chown -R` would rewrite (and thus DUPLICATE) the multi-GB model
+# store into a new layer. At this point /app holds only the venv-installed reqs.
+RUN useradd --create-home --home-dir /home/appuser --shell /usr/sbin/nologin appuser \
+ && mkdir -p -m 700 /app/data \
+ && chown -R appuser:appuser /app /home/appuser
+
+# App RUNTIME code only. Explicit list (not `COPY . .`) so the 16 GB model bundle,
+# the frontend/ Vite SOURCE (77 MB), and the internal bench/eval scripts/ dir are NOT
+# copied in — the app serves the already-built UI from static/ and never imports
+# scripts/ at runtime (it's operator tooling: build/verify/eval). Secrets/tenant data
+# are excluded by the dockerignore too, but listing runtime dirs is the real guarantee.
+COPY --chown=appuser:appuser app.py config.py models.py gunicorn.conf.py ./
+COPY --chown=appuser:appuser routes/   ./routes/
+COPY --chown=appuser:appuser services/ ./services/
+COPY --chown=appuser:appuser static/   ./static/
+
+# Baked model store — ONE COPY, ownership set inline (no chmod/chown layer that
+# would duplicate the weights). bundle_ollama_models.sh already made it a+r.
+COPY --chown=appuser:appuser deploy/ollama-bundle/ /models/
+
+COPY --chown=root:root deploy/appliance-entrypoint.sh /usr/local/bin/appliance-entrypoint.sh
+RUN chmod 0755 /usr/local/bin/appliance-entrypoint.sh
+
+USER appuser
+
+EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
+  CMD curl -fsS http://127.0.0.1:8000/api/health || exit 1
+
+# Override the base image's ollama entrypoint: start ollama, then the app.
+ENTRYPOINT ["/usr/local/bin/appliance-entrypoint.sh"]

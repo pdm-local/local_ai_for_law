@@ -1,0 +1,132 @@
+/* ============================================================================
+   responsive/phone.css  —  PHONE module  (<= 640px)
+   ----------------------------------------------------------------------------
+   Loaded last (after app.css and tablet.css) so it has the final say on the
+   smallest screens. app.css already carries the heavy mobile work at <=768px
+   (off-canvas sidebar drawer, bottom tab bar, touch targets, scrollable
+   toolbars, modal height caps). This module fills the remaining gaps and adds
+   true-phone polish:
+     • the login / auth screen (auth.css has no responsive rules of its own);
+     • a hard guard against horizontal page scroll;
+     • bottom-sheet styling for modals;
+     • safe-area padding for notched devices.
+   Keep additive — the base in app.css stays the source of truth for layout.
+   ========================================================================== */
+
+@media (max-width: 640px) {
+
+  /* ── Never let the page scroll sideways on a phone ── */
+  html, body { max-width: 100%; overflow-x: hidden; }
+
+  /* ── Login / auth screen (auth.css has zero media queries) ── */
+  .auth-card {
+    max-width: 100%;
+    margin: 0 14px;
+    padding: 22px 18px calc(20px + var(--safe-b));
+  }
+  .auth-logo-wrap img { width: 50px; height: 50px; }
+  .auth-app-name { font-size: var(--fs-lg); }
+  .auth-form { gap: 14px; }
+  .auth-form input { min-height: 44px; font-size: 16px; }   /* 16px = no iOS zoom */
+  .auth-btn-main { min-height: 46px; font-size: var(--fs-sm); }
+  .auth-disclaimer { max-width: 100%; padding: 0 16px; }
+
+  /* ── Modals behave as bottom sheets on a phone ──
+     (the real overlay class is .modal-bg, shown via .open → display:flex) ── */
+  .modal-bg { padding: 0; align-items: flex-end; }
+  .modal-bg.open { align-items: flex-end; }
+  .modal-box,
+  .modal-box[style*="max-width"] {
+    width: 100%;
+    max-width: 100% !important;
+    border-radius: 16px 16px 0 0;
+    margin: 0;
+    max-height: 90dvh;
+    overflow-y: auto;
+    padding-bottom: env(safe-area-inset-bottom);
+    animation: sheetUp .2s ease-out;
+  }
+  /* Footer buttons are easy thumb targets, side by side full-width */
+  .modal-footer { padding-bottom: calc(13px + env(safe-area-inset-bottom)); }
+  .modal-footer .btn { flex: 1; min-height: 44px; }
+
+  /* ── Dashboard / groups: single column, comfortable spacing ── */
+  .stats-row { grid-template-columns: 1fr 1fr; }
+  .action-grid,
+  .dash-actions { grid-template-columns: 1fr; }
+
+  /* ── Wide tables scroll inside their box instead of stretching the page ── */
+  .tbl-wrap, .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* ── Mobile top bar respects the notch ── */
+  .mob-bar { padding-left: max(12px, env(safe-area-inset-left)); }
+
+  /* ── Source chips / long file names never overflow ── */
+  .src-chip, .g-card-title, .grp-header-name { overflow-wrap: anywhere; }
+  .src-chip { min-height: 44px; }
+
+  /* ── Chat bar, history and the documents dialog: thumb-sized ── */
+  .chat-bar { padding: 6px 12px; }
+  .chat-bar .btn, .docpick-tools .btn, .sess-open, #sessions-list .sess-del { min-height: 44px; }
+  #sessions-list .sess-del { min-width: 44px; }
+  .docpick-row { min-height: 44px; }
+  .docpick-row input { width: 20px; height: 20px; }
+  .hist-list { padding: 4px 12px 24px; }
+
+  /* ── Files: thumb-sized rows and buttons ── */
+  .files-wrap { padding: 12px 12px 24px; }
+  .file-open { min-height: 52px; }
+  .file-retry, .file-del, .prev-back, #prev-edit-btn { min-height: 44px; }
+  .file-del { min-width: 44px; }
+  .file-bar { width: 40px; }
+  #pdf-nav button, #prev-edit-btn { min-width: 44px; min-height: 44px; }
+  #pdf-page-input { width: 52px; min-height: 44px; font-size: 16px; }
+  /* The reader on a phone: the name on its own line, then the buttons; pages turn with
+     the arrows or a swipe, so the zoom controls stay on the desktop. */
+  .prev-toolbar-name { order: -1; flex: 1 1 100%; white-space: normal; overflow-wrap: anywhere; }
+  #pdf-nav .pdf-nav-sep, #pdf-zoom-out, #pdf-zoom-info, #pdf-zoom-in, #pdf-zoom-fit { display: none; }
+
+  /* ── Concept map: give the D3 canvas a real height (flex:1 collapses on
+        phone where the panel has no fixed height context) and let the side
+        panel drop below instead of squeezing the graph ── */
+  #cm-body { flex-direction: column; }
+  #cm-container { min-height: 60vh; }
+  #cm-sidebar { width: 100% !important; border-left: none; border-top: 1px solid var(--border); max-height: 40vh; }
+  /* Toolbar controls each take a sensible share instead of fixed px widths */
+  #cm-body, #ktab-map { min-height: 0; }
+  /* On a phone the graph toolbar is search and the legend; the filters are a desktop job. */
+  .cm-toolbar .cm-more { display: none !important; }
+  .cm-toolbar #cm-search { flex: 1; min-width: 0; width: auto !important; }
+  .cm-legend { margin-left: 0; width: 100%; flex-wrap: wrap; gap: 4px 12px; }
+}
+
+/* The matter on a phone: the bottom bar carries the sections, so the header is just
+   back, the name and two actions; split view (two panes) has no room here. */
+@media (max-width: 768px) {
+  .grp-tabs { display: none; }
+  #split-toggle-btn, .grp-status #grp-idx-pill { display: none; }
+  /* The Note button lives in the top bar on a phone, so it is not repeated below it. */
+  .grp-note-btn, .dash-note-btn { display: none; }
+  .mob-note-btn { min-height: 44px; padding: 0 12px; flex-shrink: 0; }
+  .note-text { min-height: 45vh; }
+  /* .inp (13px) outranks the bare form 16px rules, so iOS would zoom into it. */
+  textarea.inp, select.inp, input.inp, .inp-sel, .inp-txt { font-size: 16px; }
+  select.inp, input.inp, .inp-sel, .inp-txt { min-height: 44px; }
+  /* Thumb-sized: the drawer's rows, a dialog's close button and the colour swatches. */
+  .nav-btn { min-height: 44px; }
+  .modal-close { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+  .c-swatch { width: 44px; height: 44px; }
+  .grp-header-row1 { padding: 4px 6px 4px 2px; }
+  .grp-header-desc, .grp-header-info { visibility: hidden; }
+  .dash-head { padding: 20px 16px 4px; }
+  .dash-body { padding: 12px 16px 24px; }
+  /* One column: look.css asks for 300px columns, wider than a 320px phone with its padding. */
+  .groups-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .g-graph { height: 112px; }
+  .g-card-tools { margin: -10px -10px -10px 0; }
+  .docs-subtabs, .chat-subtabs, .knowledge-subtabs { padding: 4px 12px 0; }
+  .mob-tabs { height: 58px; }
+  .mob-tab-btn.active { color: var(--text); }
+}
+
+@keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }

@@ -1,0 +1,3676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="" id="meta-theme-color">
+<meta name="description" content="pdm Legal Workspace  -  Local-first legal document intelligence. 100% private.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="pdm Legal Workspace">
+<link rel="manifest" href="/static/manifest.webmanifest">
+<link rel="icon" href="/static/logo-64.png" type="image/png">
+<link rel="apple-touch-icon" href="/static/logo-192.png">
+<link rel="stylesheet" href="/static/chat/chat.css?v=20261015a">
+<title>pdm Legal Workspace</title>
+<script>
+// Browser storage throws in a private window or when site data is blocked; every
+// read and write goes through here so the app still runs without it.
+window.store = {
+  get: function (k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } },
+  set: function (k, v) { try { window.localStorage.setItem(k, v); } catch (e) {} },
+  del: function (k) { try { window.localStorage.removeItem(k); } catch (e) {} },
+};
+// Palette presets (static/css/palettes.css). midnight and daylight are the default
+// pair, the pdm.ai look (company/brand/BRAND.md); graphite, ivory and the rest stay
+// selectable. The choice lives under 'law_theme': the older 'rag_preset' and 'rag_theme'
+// keys held picks made under earlier defaults and are not read.
+window.THEMES = ['midnight', 'daylight', 'graphite', 'ivory', 'slate', 'forest', 'paper', 'contrast'];
+window.LIGHT_THEMES = ['ivory', 'daylight', 'paper', 'contrast'];
+window.currentTheme = function () {
+  var t = store.get('law_theme');
+  return THEMES.indexOf(t) >= 0 ? t : 'midnight';
+};
+(function(){
+  document.documentElement.setAttribute('data-theme', currentTheme());
+  document.documentElement.setAttribute('data-density', store.get('rag_density') || 'comfortable');
+})();
+</script>
+<script src="/static/vendor/marked.min.js"></script>
+<script src="/static/vendor/purify.min.js"></script>
+<!-- App JS modules (classic globals; load before the inline app script) -->
+<script src="/static/js/ui_util.js"></script>
+<link rel="stylesheet" href="/static/vendor/katex/katex.min.css">
+<script defer src="/static/vendor/katex/katex.min.js"></script>
+<script defer src="/static/vendor/katex/contrib/auto-render.min.js"
+  onload="window._katexReady=true"></script>
+<script src="/static/vendor/d3.min.js"></script>
+<script src="/static/js/concept_map.js" defer></script>
+<script src="/static/vendor/pdf.min.js?v=3.11.174-local"></script>
+<link rel="stylesheet" id="hljs-theme" href="/static/vendor/hljs-github-dark.min.css">
+<script src="/static/vendor/highlight.min.js"></script>
+<link rel="stylesheet" href="/static/css/00-tokens.css">
+<link rel="stylesheet" href="/static/css/01-reset.css">
+<link rel="stylesheet" href="/static/css/02-base.css">
+<link rel="stylesheet" href="/static/css/themes/light.css">
+<link rel="stylesheet" href="/static/css/components/skeleton.css">
+<link rel="stylesheet" href="/static/css/components/buttons.css">
+<link rel="stylesheet" href="/static/css/components/badges.css">
+<link rel="stylesheet" href="/static/css/components/markdown.css">
+<link rel="stylesheet" href="/static/css/components/modals.css">
+<link rel="stylesheet" href="/static/css/components/toast.css">
+<link rel="stylesheet" href="/static/css/views/auth.css">
+<link rel="stylesheet" href="/static/css/app.css">
+<link rel="stylesheet" href="/static/css/look.css">
+<!-- responsive modules: tablet then phone, after app.css so they layer on top -->
+<link rel="stylesheet" href="/static/css/responsive/tablet.css">
+<link rel="stylesheet" href="/static/css/responsive/phone.css">
+</head>
+<body>
+
+<!-- ═══ AUTH SCREEN ════════════════════════════════════════════ -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-head">
+      <span class="auth-logo-wrap"><img id="auth-logo" src="/static/logo.png" alt="pdm Legal Workspace"></span>
+      <div class="auth-app-name">pdm Legal Workspace</div>
+      <div class="auth-subtitle" id="auth-subtitle">Sign in to continue</div>
+    </div>
+    <div class="auth-form">
+      <div class="field">
+        <label>Username</label>
+        <input class="inp" id="auth-user" placeholder="username" autocomplete="username">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input class="inp" id="auth-pass" type="password" placeholder="password" autocomplete="current-password"
+          onkeydown="if(event.key==='Enter')doAuth()">
+      </div>
+      <div class="field" id="auth-lang-field" style="display:none">
+        <label>Taal / Language</label>
+        <select class="inp" id="auth-language">
+          <option value="nl">Nederlands</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+      <button class="btn btn-primary auth-btn-main" onclick="doAuth()" id="auth-btn">Sign In</button>
+      <div style="text-align:center">
+        <button class="btn btn-ghost" style="font-size:var(--fs-xs)" onclick="toggleAuthMode()" id="auth-toggle">No account? Register</button>
+      </div>
+      <div id="auth-error" class="auth-error"></div>
+    </div>
+  </div>
+  <div class="auth-disclaimer" id="auth-disclaimer"></div>
+</div>
+
+<!-- ═══ MOBILE TOP BAR ══════════════════════════════════════ -->
+<div class="mob-bar">
+  <button class="hamburger" id="hamburger" onclick="toggleSidebar()">
+    <span></span><span></span><span></span>
+  </button>
+  <span class="mob-bar-title" id="mob-bar-title">pdm Legal Workspace</span>
+  <button class="btn btn-ghost btn-sm note-btn mob-note-btn" onclick="openNoteModal()" title="Write a note">
+    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg><span>Note</span>
+  </button>
+</div>
+<div class="sidebar-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
+
+<!-- ═══ MOBILE BOTTOM TAB BAR ══════════════════════════════ -->
+<div class="mob-tabs" id="mob-tabs">
+  <button class="mob-tab-btn active" id="mob-tab-btn-chat" onclick="switchTab('chat')">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+    Chat
+  </button>
+  <button class="mob-tab-btn" id="mob-tab-btn-graph" onclick="switchTab('map')">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="9" cy="18" r="2.5"/><path stroke-linecap="round" d="M8.4 6.6l7.2 1M7 8.3l1.4 7.3M16.3 10l-5.4 6.3"/></svg>
+    Graph
+  </button>
+  <button class="mob-tab-btn" id="mob-tab-btn-docs" onclick="switchTab('docs')">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+    Files
+  </button>
+  <button class="mob-tab-btn" id="mob-tab-btn-knowledge" onclick="switchTab('summaries')">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+    Summary
+  </button>
+</div>
+
+<!-- ═══ SIDEBAR ═══════════════════════════════════════════ -->
+<div id="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-icon"><img id="sb-logo-img" src="/static/logo.png" alt="pdm Legal Workspace" width="36" height="36"></div>
+    <div>
+      <div class="sb-logo-name">pdm Legal Workspace</div>
+      <div class="sb-logo-sub">Knowledge Base</div>
+    </div>
+  </div>
+
+  <div class="sb-section">
+    <button class="nav-btn active" id="nav-home" onclick="showHome()">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      Dashboard
+    </button>
+  </div>
+
+  <div class="sb-section" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px 2px">
+    <span class="sb-section-lbl" style="margin:0">Clients</span>
+    <button class="btn btn-ghost btn-icon btn-sm" onclick="openCreateModal()" title="New client" style="padding:3px 5px">
+      <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+    </button>
+  </div>
+  <div class="sb-groups" id="sb-groups"></div>
+
+  <div class="sb-footer">
+    <div style="display:flex;gap:4px;align-items:center">
+      <button class="nav-btn" id="nav-settings" onclick="showSettings()" style="flex:1" aria-label="Settings">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        Settings
+      </button>
+      <button id="theme-toggle-btn" class="btn btn-ghost btn-icon btn-sm" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme" style="flex-shrink:0"></button>
+    </div>
+    <div id="user-row" style="display:none;padding:4px 8px;margin-top:2px;align-items:center;gap:6px">
+      <div style="width:22px;height:22px;border-radius:50%;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;font-size:var(--fs-xs);font-weight:700;color:var(--accent-text);flex-shrink:0" id="user-avatar"></div>
+      <span style="font-size:var(--fs-xs);color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis" id="user-name-lbl"></span>
+      <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--fs-xs)" onclick="logout()" title="Sign out">Logout</button>
+    </div>
+    <div id="ws-dot-row">
+      <div class="dot dot-yellow" id="ws-dot"></div>
+      <span class="ws-lbl" id="ws-lbl">Chat starting...</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MAIN ══════════════════════════════════════════════ -->
+<div id="main">
+
+  <!-- ── DASHBOARD ─────────────────────────────────────── -->
+  <div class="view active" id="view-home">
+    <div class="dash-head">
+      <div class="dash-head-inner">
+        <div class="dash-title">Clients</div>
+        <div class="dash-sub">Each client keeps its own documents, graph and chats, on this machine. Nothing is shared between clients.</div>
+        <div class="dash-toolbar">
+          <button class="btn btn-primary" onclick="openCreateModal()">
+            <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            New client
+          </button>
+          <button class="btn btn-ghost note-btn dash-note-btn" onclick="openNoteModal()" title="Write a note">
+            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg><span>Note</span>
+          </button>
+          <button class="btn btn-ghost btn-icon" onclick="loadGroups()" title="Refresh" aria-label="Refresh">
+            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="dash-body">
+      <div id="groups-grid" class="groups-grid"></div>
+    </div>
+  </div>
+
+  <!-- ── GROUP VIEW ─────────────────────────────────────── -->
+  <div class="view" id="view-group">
+    <!-- Header: single row  -  identity + actions -->
+    <div class="grp-header" id="grp-header">
+      <div class="grp-header-row1">
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="toggleSidebarDesktop()" title="Toggle sidebar">
+          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
+        </button>
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="showHome()" title="Back to dashboard">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <div class="grp-header-info">
+          <div id="grp-name" class="grp-header-name"></div>
+          <div id="grp-desc" class="grp-header-desc"></div>
+        </div>
+        <div class="grp-header-acts">
+          <button class="btn btn-ghost btn-sm note-btn grp-note-btn" onclick="openNoteModal()" title="Write a note">
+            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg><span>Note</span>
+          </button>
+          <button class="btn btn-ghost btn-sm btn-icon" id="split-toggle-btn" onclick="toggleSplitView()" title="Split: Chat + Preview" aria-label="Split: Chat + Preview">
+            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+          </button>
+          <div class="grp-status" title="Connection &amp; index status">
+            <div class="dot dot-yellow" id="chat-dot"></div>
+            <span id="grp-idx-pill"></span>
+          </div>
+          <!-- Overflow menu: secondary matter actions (declutters the header on every width) -->
+          <div class="hdr-menu-wrap" id="hdr-menu-wrap">
+            <button class="btn btn-ghost btn-sm btn-icon" id="hdr-menu-btn" onclick="toggleHdrMenu(event)" title="More actions" aria-label="More actions">
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg>
+            </button>
+            <div class="hdr-menu" id="hdr-menu" style="display:none">
+              <button class="hdr-menu-item" onclick="exportGroup();closeHdrMenu()">
+                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+                Export ZIP
+              </button>
+              <button class="hdr-menu-item" onclick="downloadReport();closeHdrMenu()">
+                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Download PDF
+              </button>
+              <button class="hdr-menu-item" onclick="openEditModal();closeHdrMenu()">
+                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                Edit client
+              </button>
+              <div class="hdr-menu-sep"></div>
+              <button class="hdr-menu-item hdr-menu-danger" onclick="confirmDelete();closeHdrMenu()">
+                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                Delete client
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <nav class="grp-tabs" aria-label="Matter sections">
+        <button class="grp-tab active" id="tab-btn-chat" onclick="switchTab('chat')">Chat</button>
+        <button class="grp-tab" id="tab-btn-graph" onclick="switchTab('map')">Graph</button>
+        <button class="grp-tab" id="tab-btn-docs" onclick="switchTab('docs')">Files</button>
+        <button class="grp-tab" id="tab-btn-knowledge" onclick="switchTab('summaries')">Summary</button>
+      </nav>
+    </div>
+
+    <!-- Tab panels container -->
+    <div class="grp-body" id="grp-body">
+
+      <!-- Main panels (split-left when split mode) -->
+      <div id="split-main">
+
+      <!-- CHAT PANEL -->
+      <div class="tab-panel active" id="panel-chat">
+        <div class="chat-bar">
+          <button class="btn btn-secondary btn-sm chat-new-btn" onclick="window.RagChat?.clear()">New chat</button>
+          <button class="btn btn-secondary btn-sm" id="chat-docs-btn" onclick="openDocPicker()">Documents: All</button>
+          <button class="btn btn-secondary btn-sm" id="chat-hist-btn" onclick="toggleHistory()">History</button>
+        </div>
+        <div class="chat-subtab-panel active" id="cstab-chat">
+          <div id="react-chat-root"></div>
+        </div>
+        <div class="chat-subtab-panel" id="cstab-history">
+          <div class="hist-list" id="sessions-list"></div>
+        </div>
+      </div><!-- /panel-chat -->
+
+      <!-- DOCUMENTS PANEL -->
+      <div class="tab-panel" id="panel-docs">
+
+        <!-- ── FILES: upload on top, then every file of the client in one list ── -->
+        <div class="docs-subtab-panel active" id="dstab-files">
+          <div class="files-wrap">
+            <div class="upload-zone" id="idx-upload-zone" role="button" tabindex="0"
+              onclick="document.getElementById('idx-file-in').click()"
+              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}"
+              ondragover="event.preventDefault();this.classList.add('over')"
+              ondragleave="this.classList.remove('over')"
+              ondrop="idxOnDrop(event)">
+              <input type="file" id="idx-file-in" style="display:none" accept=".pdf,.ipynb,.txt,.md,.docx,.html,.htm,.csv,.xlsx,.pptx,.epub,.json,.xml" multiple onchange="idxOnFilePick(event)">
+              <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+              <div class="uz-title">Add files</div>
+              <div class="uz-sub">Drop them here or tap to choose. PDF, Word, text and more, up to 50 MB each.</div>
+            </div>
+            <div id="idx-upload-msg"></div>
+            <ul class="file-list" id="file-list" aria-live="polite"></ul>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- PREVIEW PANEL -->
+      <div class="tab-panel" id="panel-preview">
+        <div class="prev-sidebar">
+          <div class="prev-sidebar-head">Documents</div>
+          <div class="prev-doc-list" id="prev-doc-list">
+            <div class="skel-wrap" role="status" aria-busy="true"><span class="sr-only">Loading</span><div class="skel skel-line w80"></div><div class="skel skel-line"></div><div class="skel skel-line w60"></div></div>
+          </div>
+        </div>
+        <div class="prev-content">
+          <div class="prev-toolbar" id="prev-toolbar" style="display:none">
+            <button class="btn btn-secondary btn-sm prev-back" onclick="closeReader()" style="flex-shrink:0">
+              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+              Files
+            </button>
+            <button class="btn btn-sm" id="prev-sidebar-toggle" onclick="togglePrevSidebar()" title="Toggle document list" style="flex-shrink:0;padding:5px 9px;background:var(--surface);border:1px solid var(--border2);color:var(--text2);border-radius:6px;">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
+            </button>
+            <span class="prev-toolbar-name" id="prev-doc-name"></span>
+            <button class="btn btn-secondary btn-sm" id="prev-edit-btn" onclick="editReaderFile()" style="flex-shrink:0;display:none">Edit</button>
+            <button class="btn btn-secondary btn-sm" id="prev-summary-btn" onclick="toggleDocSummary()" title="Show AI summary" style="flex-shrink:0">
+              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              Summary
+            </button>
+            <button class="btn btn-secondary btn-sm" id="ann-toggle-btn" onclick="toggleAnnotationSidebar()" title="Show annotations" style="flex-shrink:0">
+              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+              Annotations
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="askAboutDoc()" title="Go to chat and ask about this document">
+              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+              Ask about this
+            </button>
+          </div>
+          <div id="doc-summary-panel" class="doc-summary-panel" style="display:none"></div>
+          <div class="prev-empty" id="prev-empty">
+            <svg width="42" height="42" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="opacity:.18"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            <span style="font-size:var(--fs-xs)">Select a document to preview</span>
+          </div>
+          <iframe id="prev-frame" style="display:none"></iframe>
+          <div id="pdf-viewer-wrap" style="display:none">
+            <div id="pdf-nav">
+              <button id="pdf-prev" onclick="pdfPrevPage()" disabled>&#8592;</button>
+              <span id="pdf-page-info">
+                <input type="number" id="pdf-page-input" value="1" min="1" onchange="pdfGoToPage(this.value)" onkeydown="if(event.key==='Enter'){this.blur();pdfGoToPage(this.value)}">
+                <span>/ <span id="pdf-total-pages">1</span></span>
+              </span>
+              <button id="pdf-next" onclick="pdfNextPage()">&#8594;</button>
+              <div class="pdf-nav-sep"></div>
+              <button id="pdf-zoom-out" onclick="pdfZoom(-0.25)" title="Zoom out">&#8722;</button>
+              <span id="pdf-zoom-info">100%</span>
+              <button id="pdf-zoom-in"  onclick="pdfZoom(+0.25)" title="Zoom in">&#43;</button>
+              <button id="pdf-zoom-fit" onclick="pdfZoomFit()" title="Fit to width" style="font-size:var(--fs-xs);padding:6px 10px;">Fit</button>
+            </div>
+            <div id="pdf-canvas-wrap">
+              <canvas id="pdf-canvas"></canvas>
+              <canvas id="pdf-canvas-2" hidden></canvas>
+            </div>
+          </div>
+          <div id="prev-text-wrap" style="display:none;flex:1;overflow:auto;padding:24px 28px"><div id="prev-text" class="md"></div></div>
+        </div>
+        <div class="ann-sidebar collapsed" id="ann-sidebar">
+          <div class="ann-sidebar-head">
+            <span>Annotations</span>
+            <span class="ann-count" id="ann-count"></span>
+          </div>
+          <div class="ann-list" id="ann-list">
+            <div class="ann-empty">Select text in the preview to add highlights.</div>
+          </div>
+        </div>
+      </div><!-- /panel-preview -->
+
+      <!-- SUMMARY PANEL (the client overview and document summaries; the graph shares it as the Graph tab) -->
+      <div class="tab-panel" id="panel-knowledge">
+        <!-- ── MAP SUB-TAB ── -->
+        <div class="knowledge-subtab-panel" id="ktab-map">
+          <div class="cm-toolbar">
+            <input id="cm-search" class="inp-txt" style="padding:4px 8px;width:180px" placeholder="Search nodes…" oninput="ConceptMap.search(this.value)">
+            <select id="cm-node-type" class="inp-sel cm-more" style="width:120px" onchange="cmApplyFilters()">
+              <option value="">All types</option>
+              <option value="WikiPage">Wiki Pages</option>
+              <option value="Document">Documents</option>
+              <option value="Concept">Concepts</option>
+              <option value="Policy">Policies</option>
+              <option value="Paper">Papers</option>
+            </select>
+            <select id="cm-relation-type" class="inp-sel cm-more" style="width:120px" onchange="cmApplyFilters()" title="Filter by relation type">
+              <option value="">All relations</option>
+              <option value="DEFINES">Defines</option>
+              <option value="MENTIONS">Mentions</option>
+              <option value="CITES">Cites</option>
+              <option value="FOUND_IN">Found in</option>
+            </select>
+            <select id="cm-limit" class="inp-sel cm-more" style="width:100px" onchange="cmApplyFilters()" title="Max nodes to display">
+              <option value="150">150 nodes</option>
+              <option value="300" selected>300 nodes</option>
+              <option value="600">600 nodes</option>
+            </select>
+            <label class="cm-more" style="display:flex;align-items:center;gap:5px;font-size:var(--fs-xs);color:var(--text2);cursor:pointer;white-space:nowrap" title="Only show concepts that appear in 2+ documents.">
+              <input type="checkbox" id="cm-cross-doc" onchange="cmApplyFilters()" style="cursor:pointer">
+              Cross-doc only
+            </label>
+            <button class="btn btn-ghost btn-sm cm-more" onclick="ConceptMap.exportSVG()">Export SVG</button>
+            <div class="cm-legend">
+              <span id="cm-node-count"></span>
+              <span id="cm-job-status" style="display:none;color:var(--yellow)"></span>
+              <span class="cm-key" style="--k:var(--node-doc)">Document</span>
+              <span class="cm-key" style="--k:var(--node-concept)">Concept</span>
+              <span class="cm-key" style="--k:var(--node-wiki)">Wiki</span>
+            </div>
+          </div>
+          <div id="cm-body" style="display:flex;flex:1;min-height:0;overflow:hidden">
+            <div id="cm-container" style="flex:1;min-height:0;background:var(--bg)"></div>
+            <div id="cm-sidebar" style="display:none;width:220px;flex-shrink:0;border-left:1px solid var(--border);overflow-y:auto;background:var(--bg-alt)"></div>
+          </div>
+        </div>
+
+        <!-- ── SUMMARY: the client's overview, then one summary per document ── -->
+        <div class="knowledge-subtab-panel" id="ktab-summaries">
+          <section class="sum-overview" id="sum-overview"></section>
+          <div class="panel-section-title">Documents</div>
+          <div id="doc-summaries-list"></div>
+        </div>
+
+      </div><!-- /panel-knowledge -->
+
+      </div><!-- /split-main -->
+
+      <!-- Draggable divider (shown in split mode) -->
+      <div id="split-handle" onmousedown="startSplitDrag(event)">
+        <div class="split-dots">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <!-- Secondary pane: preview panel moves here in split mode -->
+      <div id="split-secondary"></div>
+
+    </div><!-- /grp-body -->
+  </div><!-- /view-group -->
+
+  <!-- ── SETTINGS ───────────────────────────────────────── -->
+  <div class="view" id="view-settings">
+    <div class="settings-body">
+      <div>
+        <div class="settings-page-title">Settings</div>
+        <div class="settings-page-sub">Your profile, the language and how the app looks.</div>
+      </div>
+
+      <!-- Profile card -->
+      <div class="s-card">
+        <div class="s-card-head">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          My Profile
+        </div>
+        <div class="s-card-body">
+          <div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap">
+            <!-- Avatar -->
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0">
+              <div id="profile-avatar-preview" style="width:72px;height:72px;border-radius:50%;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;font-size:var(--fs-2xl);font-weight:700;color:var(--accent-text);overflow:hidden;border:2px solid var(--border)">
+                <span id="profile-avatar-initial">?</span>
+                <img id="profile-avatar-img" style="display:none;width:100%;height:100%;object-fit:cover" alt="avatar">
+              </div>
+              <label class="btn btn-ghost btn-sm" style="cursor:pointer;font-size:var(--fs-xs)">
+                Upload Photo
+                <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" id="profile-avatar-input" style="display:none" onchange="profileAvatarPicked(this)">
+              </label>
+              <button class="btn btn-ghost btn-sm" style="font-size:var(--fs-xs);color:var(--red)" onclick="profileClearAvatar()">Remove</button>
+            </div>
+            <!-- Fields -->
+            <div style="flex:1;min-width:180px;display:flex;flex-direction:column;gap:10px">
+              <div class="field">
+                <label>Display Name</label>
+                <input class="inp" id="profile-display-name" type="text" maxlength="100" placeholder="Your name">
+              </div>
+              <div class="field">
+                <label>About</label>
+                <textarea class="inp" id="profile-bio" rows="3" maxlength="500" style="resize:vertical" placeholder="A short bio…"></textarea>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="saveProfile()">Save Profile</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="s-card">
+        <div class="s-card-head">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"/></svg>
+          Language
+        </div>
+        <div class="s-card-body">
+          <div class="field">
+            <label for="s-app-language">Language of the app and the answers</label>
+            <select class="inp" id="s-app-language">
+              <option value="en">English</option>
+              <option value="nl">Nederlands</option>
+            </select>
+            <div class="field-hint">New clients use it unless you set another language for a client.</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:12px">
+            <button class="btn btn-primary btn-sm" onclick="saveSettings()">Save</button>
+            <span id="s-saved" style="font-size:var(--fs-xs);color:var(--green);display:none">✓ Saved</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="s-card">
+        <div class="s-card-head">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+          Appearance
+        </div>
+        <div class="s-card-body">
+          <div class="form-row form-row-2">
+            <div class="field">
+              <label>Theme</label>
+              <select class="inp" id="s-theme" onchange="setTheme(this.value)">
+                <option value="midnight">Midnight</option>
+                <option value="daylight">Daylight</option>
+                <option value="graphite">Graphite</option>
+                <option value="ivory">Ivory</option>
+                <option value="slate">Slate</option>
+                <option value="forest">Forest</option>
+                <option value="paper">Paper</option>
+                <option value="contrast">High contrast</option>
+              </select>
+              <div class="field-hint">The button in the sidebar switches between Midnight and Daylight.</div>
+            </div>
+            <div class="field">
+              <label>Density</label>
+              <select class="inp" id="s-density" onchange="setDensity(this.value)">
+                <option value="compact">Compact</option>
+                <option value="comfortable">Comfortable</option>
+                <option value="cozy">Cozy</option>
+              </select>
+              <div class="field-hint">Adjusts base font size app-wide.</div>
+            </div>
+          </div>
+          <div style="margin-top:12px">
+            <button class="btn btn-secondary btn-sm" onclick="showShortcutsHelp()">⌨ Keyboard shortcuts</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin panel (populated by JS if user is admin) -->
+      <div id="admin-panel" style="margin-top:24px"></div>
+
+      <!-- Privacy Policy -->
+      <div class="s-card" style="margin-top:24px">
+        <div class="s-card-head">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          Privacy Policy
+        </div>
+        <div class="s-card-body" style="font-size:var(--fs-xs);color:var(--text2);line-height:1.7">
+          <p style="margin:0 0 8px"><strong>Local-first &amp; private.</strong> pdm Legal Workspace runs entirely on your machine. All documents, matters, notes, and chat history are stored locally in the <code>data/</code> directory and are never transmitted to any external server.</p>
+          <p style="margin:0 0 8px"><strong>The assistant.</strong> Answers are written on this machine. No document or question leaves your network.</p>
+          <p style="margin:0 0 8px"><strong>No analytics or telemetry.</strong> This application does not collect usage statistics, crash reports, or any personal data.</p>
+          <p style="margin:0 0 8px"><strong>Data retention.</strong> You are in full control. Deleting a knowledge group permanently removes all associated documents and generated content. Use the export feature to back up your data at any time.</p>
+          <p style="margin:0"><strong>Contact.</strong> If you have questions about data handling, contact the system administrator who deployed this instance.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ═══ GROUP MODAL (create/edit) ══════════════════════════ -->
+<!-- ═══ NOTE MODAL: write a note, keep it with a client ═══ -->
+<div class="modal-bg" id="note-modal" role="dialog" aria-modal="true" aria-labelledby="note-modal-title">
+  <div class="modal-box note-box">
+    <div class="modal-hdr">
+      <span class="modal-title" id="note-modal-title">New note</span>
+      <button class="modal-close" onclick="closeNoteModal()" aria-label="Close">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label for="note-title">Title</label>
+        <input class="inp" id="note-title" maxlength="120" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('note-text').focus()}">
+      </div>
+      <div class="field">
+        <label for="note-text">Note</label>
+        <textarea class="inp note-text" id="note-text" rows="12"></textarea>
+      </div>
+      <div class="field">
+        <label for="note-client">Keep with client</label>
+        <select class="inp-sel" id="note-client" style="width:100%"></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeNoteModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="note-save-btn" onclick="saveNoteModal()">Save note</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ FILE EDITOR MODAL ═══════════════════════════════════ -->
+<div class="modal-bg" id="fe-modal">
+  <div class="modal-box" style="max-width:760px">
+    <div class="modal-hdr">
+      <span class="modal-title" id="fe-modal-title">Edit File</span>
+      <button class="modal-close" onclick="closeFileEditor()" aria-label="Close">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" style="padding:12px 14px">
+      <textarea class="inp" id="fe-content" rows="20" style="font-family:var(--mono);font-size:var(--fs-xs);resize:vertical;width:100%;line-height:1.6" spellcheck="false"></textarea>
+      <div style="font-size:var(--fs-xs);color:var(--text3)">Markdown is supported. Save re-indexes the file automatically.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeFileEditor()">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveFileContent()">Save &amp; Re-index</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="group-modal">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <span class="modal-title" id="modal-title-text">New client</span>
+      <button class="modal-close" onclick="closeGroupModal()" aria-label="Close">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Client name *</label>
+        <input class="inp" id="gm-name" placeholder="e.g. Helix Data B.V.">
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <input class="inp" id="gm-desc" placeholder="Brief description (optional)">
+      </div>
+      <div class="field">
+        <label>Color</label>
+        <div class="color-row" id="gm-colors"></div>
+      </div>
+      <div class="field" style="display:none">
+        <div class="emoji-row" id="gm-emojis"></div>
+      </div>
+      <div class="field">
+        <label>Language</label>
+        <select class="inp" id="gm-language" style="padding:8px 12px"></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeGroupModal()">Cancel</button>
+      <button class="btn btn-primary" id="gm-submit" onclick="submitGroup()">Create client</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DOCUMENTS FOR THIS CHAT ═════════════════════════════ -->
+<div class="modal-bg" id="docpick-modal">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="docpick-title" style="max-width:520px">
+    <div class="modal-hdr">
+      <span class="modal-title" id="docpick-title">Documents for this chat</span>
+      <button class="modal-close" onclick="closeDocPicker()" aria-label="Close">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p class="docpick-hint">Answers in this chat use only the ticked documents.</p>
+      <div class="docpick-tools">
+        <button class="btn btn-ghost btn-sm" onclick="docPickAll(true)">Select all</button>
+        <button class="btn btn-ghost btn-sm" onclick="docPickAll(false)">Clear</button>
+      </div>
+      <div class="docpick-list" id="docpick-list"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeDocPicker()">Cancel</button>
+      <button class="btn btn-primary" id="docpick-ok" onclick="applyDocPicker()">Use these</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CONFIRM DIALOG ══════════════════════════════════════ -->
+<div class="modal-bg" id="confirm-bg">
+  <div class="modal-box" id="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+    <div class="modal-hdr">
+      <span class="modal-title" id="confirm-title">Confirm</span>
+      <button class="modal-close" onclick="cancelConfirm()" aria-label="Close">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p id="confirm-msg"></p>
+      <input class="inp" id="confirm-input" style="display:none;margin-top:12px" aria-labelledby="confirm-msg"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();doConfirm()}">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="confirm-cancel" onclick="cancelConfirm()">Cancel</button>
+      <button class="btn btn-danger" id="confirm-ok" onclick="doConfirm()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SOURCE MODAL ════════════════════════════════════════ -->
+<div class="modal-bg" id="src-modal">
+  <div class="modal-box" style="max-width:640px">
+    <div class="modal-hdr">
+      <span class="modal-title" id="src-modal-title">Source</span>
+      <button class="modal-close" onclick="closeSrcModal()" aria-label="Close">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div id="src-state" class="src-state" role="status" hidden></div>
+    <div id="src-text"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeSrcModal()">Close</button>
+      <button class="btn btn-primary" id="src-open-preview" onclick="openCurrentSourcePreview()">Open in Preview</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ SIDEBAR REVEAL (desktop collapsed state) ════════════ -->
+<button id="sidebar-reveal-btn" onclick="toggleSidebarDesktop()" title="Show sidebar">
+  <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+  <span style="writing-mode:vertical-lr;font-size:var(--fs-xs);font-weight:700;color:var(--text3)">Groups</span>
+</button>
+
+<!-- ═══ TOAST CONTAINER ═════════════════════════════════════ -->
+<div id="toast-container"></div>
+
+<div class="ann-popover" id="ann-popover">
+  <div style="font-size:var(--fs-xs);font-weight:600;color:var(--text2)">Highlight selected text</div>
+  <div class="ann-popover-colors" id="ann-popover-colors">
+    <button class="ann-color-btn active" data-color="yellow" style="background:rgb(var(--hl-yellow))" aria-label="Yellow" onclick="pickAnnColor(this)"></button>
+    <button class="ann-color-btn" data-color="green" style="background:rgb(var(--hl-green))" aria-label="Green" onclick="pickAnnColor(this)"></button>
+    <button class="ann-color-btn" data-color="blue" style="background:rgb(var(--hl-blue))" aria-label="Blue" onclick="pickAnnColor(this)"></button>
+    <button class="ann-color-btn" data-color="pink" style="background:rgb(var(--hl-pink))" aria-label="Pink" onclick="pickAnnColor(this)"></button>
+    <button class="ann-color-btn" data-color="orange" style="background:rgb(var(--hl-orange))" aria-label="Orange" onclick="pickAnnColor(this)"></button>
+  </div>
+  <textarea id="ann-note-input" placeholder="Add a note (optional)…"></textarea>
+  <div class="ann-popover-btns">
+    <button class="btn btn-sm" onclick="hideAnnPopover()" style="font-size:var(--fs-xs)">Cancel</button>
+    <button class="btn btn-primary btn-sm" onclick="saveAnnotationFromPopover()" style="font-size:var(--fs-xs)">Save highlight</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ JS -->
+<script>
+'use strict';
+
+// ── CONFIG ────────────────────────────────────────────────
+marked.setOptions({ breaks:true, gfm:true });
+
+function renderMarkdown(text) {
+  const src = String(text || '');
+  const codeParts = src.split(/(```[\s\S]*?```)/g);
+  const protectedSrc = codeParts.map((part, i) => i % 2 ? part : protectMath(part)).join('');
+  if (typeof marked === 'undefined') return X(protectedSrc).replace(/\n/g, '<br>');
+  return sanitizeHtml(marked.parse(protectedSrc));
+}
+
+// All markdown comes from untrusted sources (LLM output, ingested documents,
+// wiki bodies) and lands in innerHTML under a CSP that allows inline scripts —
+// so every render must pass through DOMPurify.
+function sanitizeHtml(html) {
+  if (typeof DOMPurify === 'undefined') return X(String(html || ''));
+  return DOMPurify.sanitize(String(html || ''), { FORBID_TAGS: ['style', 'form'] });
+}
+
+function protectMath(text) {
+  return String(text || '')
+    .replace(/\$\$([\s\S]+?)\$\$/g, (_, expr) => renderMath(expr, true))
+    .replace(/\\\[([\s\S]+?)\\\]/g, (_, expr) => renderMath(expr, true))
+    .replace(/\\\(([\s\S]+?)\\\)/g, (_, expr) => renderMath(expr, false))
+    .replace(/(^|[^\\])\$([^\n$]+?)\$/g, (_, lead, expr) => lead + renderMath(expr, false))
+    .replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, (m) => renderMath(m, false));
+}
+
+function renderMath(expr, block) {
+  const html = formatMath(expr);
+  return block
+    ? `<div class="math-block">${html}</div>`
+    : `<span class="math-inline">${html}</span>`;
+}
+
+function formatMath(expr) {
+  let s = X(String(expr || '').trim());
+  s = s
+    .replace(/\\leftarrow/g, '←')
+    .replace(/\\rightarrow/g, '→')
+    .replace(/\\gets/g, '←')
+    .replace(/\\to/g, '→')
+    .replace(/\\implies/g, '⟹')
+    .replace(/\\iff/g, '⟺')
+    .replace(/\\left/g, '')
+    .replace(/\\right/g, '')
+    .replace(/\\,/g, ' ')
+    .replace(/\\!/g, '')
+    .replace(/\\cdot/g, '·')
+    .replace(/\\times/g, '×')
+    .replace(/\\div/g, '÷')
+    .replace(/\\pm/g, '±')
+    .replace(/\\mp/g, '∓')
+    .replace(/\\cap/g, '∩')
+    .replace(/\\cup/g, '∪')
+    .replace(/\\subset/g, '⊂')
+    .replace(/\\subseteq/g, '⊆')
+    .replace(/\\supset/g, '⊃')
+    .replace(/\\supseteq/g, '⊇')
+    .replace(/\\in\b/g, '∈')
+    .replace(/\\notin/g, '∉')
+    .replace(/\\emptyset/g, '∅')
+    .replace(/\\forall/g, '∀')
+    .replace(/\\exists/g, '∃')
+    .replace(/\\land/g, '∧')
+    .replace(/\\lor/g, '∨')
+    .replace(/\\lnot/g, '¬')
+    .replace(/\\neg/g, '¬')
+    .replace(/\\neq/g, '≠')
+    .replace(/\\leq/g, '≤')
+    .replace(/\\geq/g, '≥')
+    .replace(/\\approx/g, '≈')
+    .replace(/\\sim/g, '∼')
+    .replace(/\\infty/g, '∞')
+    .replace(/\\partial/g, '∂')
+    .replace(/\\nabla/g, '∇')
+    .replace(/\\sum/g, '∑')
+    .replace(/\\int/g, '∫')
+    .replace(/\\prod/g, '∏')
+    .replace(/\\alpha/g, 'α')
+    .replace(/\\beta/g, 'β')
+    .replace(/\\gamma/g, 'γ')
+    .replace(/\\Gamma/g, 'Γ')
+    .replace(/\\eta/g, 'η')
+    .replace(/\\Delta/g, 'Δ')
+    .replace(/\\delta/g, 'δ')
+    .replace(/\\epsilon/g, 'ε')
+    .replace(/\\varepsilon/g, 'ε')
+    .replace(/\\zeta/g, 'ζ')
+    .replace(/\\theta/g, 'θ')
+    .replace(/\\Theta/g, 'Θ')
+    .replace(/\\iota/g, 'ι')
+    .replace(/\\kappa/g, 'κ')
+    .replace(/\\lambda/g, 'λ')
+    .replace(/\\Lambda/g, 'Λ')
+    .replace(/\\mu/g, 'μ')
+    .replace(/\\nu/g, 'ν')
+    .replace(/\\xi/g, 'ξ')
+    .replace(/\\Xi/g, 'Ξ')
+    .replace(/\\pi/g, 'π')
+    .replace(/\\rho/g, 'ρ')
+    .replace(/\\sigma/g, 'σ')
+    .replace(/\\Sigma/g, 'Σ')
+    .replace(/\\tau/g, 'τ')
+    .replace(/\\upsilon/g, 'υ')
+    .replace(/\\phi/g, 'φ')
+    .replace(/\\Phi/g, 'Φ')
+    .replace(/\\chi/g, 'χ')
+    .replace(/\\psi/g, 'ψ')
+    .replace(/\\Psi/g, 'Ψ')
+    .replace(/\\omega/g, 'ω')
+    .replace(/\\Omega/g, 'Ω')
+    .replace(/\\sqrt\{([^{}]+)\}/g, (_, e) => `√(${e})`)
+    .replace(/\\mathbf\{([^{}]+)\}/g, '<span class="math-bold">$1</span>')
+    .replace(/\\mathrm\{([^{}]+)\}/g, '$1')
+    .replace(/\\text\{([^{}]+)\}/g, '$1')
+    .replace(/\\\(/g, '(')
+    .replace(/\\\)/g, ')')
+    .replace(/\\\[/g, '[')
+    .replace(/\\\]/g, ']')
+    .replace(/'!\s*\(/g, "'(")
+    .replace(/\s+/g, ' ');
+  s = s.replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, (_, n, d) =>
+    `<span class="math-frac"><span class="math-num">${n}</span><span class="math-den">${d}</span></span>`);
+  s = s.replace(/([A-Za-zαβγδεζηθικλμνξπρστυφχψωΓΔΘΛΞΣΦΨΩ∑∫∏]|<\/span>|\))_\{([^{}]+)\}/g, (_, base, sub) => `${base}<sub>${cleanMathScript(sub)}</sub>`);
+  s = s.replace(/([A-Za-zαβγδεζηθικλμνξπρστυφχψωΓΔΘΛΞΣΦΨΩ∑∫∏]|<\/span>|\))\^\{([^{}]+)\}/g, (_, base, sup) => `${base}<sup>${cleanMathScript(sup)}</sup>`);
+  s = s.replace(/([A-Za-zαβγδεζηθικλμνξπρστυφχψωΓΔΘΛΞΣΦΨΩ]|\))_([A-Za-z0-9+-]+)/g, '$1<sub>$2</sub>');
+  s = s.replace(/([A-Za-zαβγδεζηθικλμνξπρστυφχψωΓΔΘΛΞΣΦΨΩ]|\))\^([A-Za-z0-9+-]+)/g, '$1<sup>$2</sup>');
+  s = s.replace(/\b([Wf])\b/g, '<span class="math-symbol">$1</span>');
+  return s;
+}
+
+function cleanMathScript(s) {
+  return String(s || '').replace(/^,/, '').replace(/\\,/g, ' ').trim();
+}
+
+// A matter's colour is stored as a token name (cat-1 .. cat-8, static/css/00-tokens.css).
+const COLORS = ['cat-1','cat-2','cat-3','cat-4','cat-5','cat-6','cat-7','cat-8'];
+// Matters and highlights saved before the pdm.ai palette stored a hex value. This
+// maps the old picker's values onto the token that replaced each one; the keys are
+// stored data, not colours the app draws.
+const _LEGACY_GROUP_COLOR = {'#6366f1':'cat-1','#8b5cf6':'cat-2','#0ea5e9':'cat-3','#10b981':'cat-4',
+  '#f59e0b':'cat-5','#f43f5e':'cat-6','#14b8a6':'cat-7','#f97316':'cat-8'};
+const ANN_COLORS = ['yellow','green','blue','pink','orange'];
+const _LEGACY_ANN_COLOR = {'#fbbf24':'yellow','#34d399':'green','#60a5fa':'blue','#f472b6':'pink','#fb923c':'orange'};
+// Stored values never reach a style unchecked: anything unknown gets the first token.
+function grpColor(c) {
+  const k = COLORS.includes(c) ? c : (_LEGACY_GROUP_COLOR[String(c || '').toLowerCase()] || 'cat-1');
+  return `var(--${k})`;
+}
+function annColorName(c) {
+  return ANN_COLORS.includes(c) ? c : (_LEGACY_ANN_COLOR[String(c || '').toLowerCase()] || 'yellow');
+}
+function annColor(c, alpha) {
+  const k = annColorName(c);
+  return alpha == null ? `rgb(var(--hl-${k}))` : `rgb(var(--hl-${k}) / ${alpha})`;
+}
+const EMOJIS = ['📚','🔬','📐','💻','🌍','🧬','📜','🎯','⚗️','🏛️','💡','🗂️','🧪','🏥','⚖️','🎓','📊','🔐'];
+let LANGUAGES = {en:'English',nl:'Dutch'};
+let DEFAULT_LANG = 'en';
+
+// ── i18n ──────────────────────────────────────────────────
+// HTML is authored in English (canonical). When UI_LANG==='nl' a DOM walk swaps
+// known English strings to Dutch and caches originals so switching back to 'en'
+// restores them. Unmapped strings simply stay English (graceful). Default is English
+// (the canonical HTML); a user whose app_language is 'nl' gets Dutch after login.
+let UI_LANG = 'en';
+const MAP_EN_NL = {
+  // nav / shell
+  "Knowledge Base":"Kennisbank","Dashboard":"Dashboard","Groups":"Groepen",
+  "Settings":"Instellingen","Logout":"Uitloggen","Chat starting...":"Chat wordt gestart...",
+  "Chat":"Chat","Docs":"Documenten","Knowledge":"Kennis","Documents":"Documenten",
+  "Knowledge Groups":"Kennisgroepen",
+  "Each group has a fully isolated index, documents, and chat history.":"Elke groep heeft een volledig geïsoleerde index, documenten en chatgeschiedenis.",
+  "New Group":"Nieuwe groep","Refresh":"Vernieuwen","Export ZIP":"Exporteer ZIP",
+  "Edit":"Bewerken","Delete":"Verwijderen","Cancel":"Annuleren","Save":"Opslaan",
+  "Create":"Aanmaken","Close":"Sluiten",
+  // chat controls
+  "Model":"Model","Top-K":"Top-K","chunks":"fragmenten","Difficulty":"Niveau","Level":"Niveau",
+  "Beginner":"Beginner","Intermediate":"Gemiddeld","Expert":"Expert",
+  "Clear chat history":"Chatgeschiedenis wissen","Sessions":"Sessies","Sources":"Bronnen",
+  "New chat":"Nieuwe chat","Attach image":"Afbeelding toevoegen",
+  "Ask about this client's documents...":"Stel een vraag over de documenten van deze cliënt...",
+  "Select model":"Selecteer model","Ready":"Gereed","Connecting":"Verbinden","Stop":"Stop",
+  "Send":"Versturen","Remove image":"Afbeelding verwijderen","Thinking...":"Bezig met nadenken...",
+  "Selected model may not support vision":"Gekozen model ondersteunt mogelijk geen beeld",
+  "Choose a client to start chatting.":"Kies een cliënt om te chatten.",
+  "No documents are ready yet. Add them under Files; chat can use a file once it shows a green tick.":"Nog geen documenten klaar. Voeg ze toe onder Bestanden; de chat kan een bestand gebruiken zodra het een groen vinkje heeft.",
+  "Ask anything about":"Stel een vraag over",
+  // tab labels / subtabs
+  "Split: Chat + Preview":"Splitsen: Chat + Voorbeeld",
+  "History":"Geschiedenis","Graph":"Graaf","Summaries":"Samenvattingen",
+  "Clients":"Cliënten","The overview appears here once the documents are ready.":"Het overzicht verschijnt hier zodra de documenten klaar zijn.",
+  "Each document's summary appears here once it is ready.":"De samenvatting van elk document verschijnt hier zodra die klaar is.","documents":"documenten","No graph yet":"Nog geen graaf",
+  "Each client keeps its own documents, graph and chats, on this machine. Nothing is shared between clients.":"Elke cliënt heeft eigen documenten, graaf en chats, op deze computer. Niets wordt tussen cliënten gedeeld.",
+  "New client":"Nieuwe cliënt","Edit client":"Cliënt bewerken","Delete client":"Cliënt verwijderen",
+  "Create client":"Cliënt aanmaken","Client name *":"Naam cliënt *","Description":"Omschrijving",
+  "Color":"Kleur","Language":"Taal","Summary":"Samenvatting",
+  "No chats yet for this client.":"Nog geen chats voor deze cliënt.",
+  "No documents for this client yet.":"Nog geen documenten voor deze cliënt.",
+  // the graph
+  "Search nodes…":"Zoek in de graaf…","All types":"Alle soorten","Wiki Pages":"Wikipagina's",
+  "Concepts":"Begrippen","Policies":"Beleid","Papers":"Artikelen","All relations":"Alle relaties",
+  "Defines":"Definieert","Mentions":"Noemt","Cites":"Citeert","Found in":"Komt voor in",
+  "150 nodes":"150 punten","300 nodes":"300 punten","600 nodes":"600 punten",
+  "Cross-doc only":"Alleen tussen documenten","Export SVG":"Exporteer SVG",
+  "Document":"Document","Concept":"Begrip","Wiki":"Wiki",
+  "nodes":"punten","edges":"verbindingen",
+  "No knowledge graph yet":"Nog geen kennisgraaf",
+  "Re-index this matter to extract concepts and relations.":"Indexeer deze cliënt opnieuw om begrippen en verbanden te vinden.",
+  "Open summary":"Open samenvatting","Chat About This":"Vraag hierover in de chat",
+  "Source:":"Bron:","visible":"zichtbaar","total connections":"verbindingen in totaal",
+  "total connection":"verbinding in totaal","Explain:":"Leg uit:",
+  "Clear search":"Zoekopdracht wissen","Close":"Sluiten","All files":"Alle bestanden","Open":"Openen","passages":"passages","Indexed":"Geïndexeerd",
+  "Not indexed":"Niet geïndexeerd","Indexing":"Bezig met indexeren",
+  "pdm Legal Workspace":"pdm Juridische Werkplek",
+  "Local document intelligence for law firms":"Lokale documentintelligentie voor advocatenkantoren",
+  "Not legal advice. AI-generated document intelligence: always check it against the source documents.":"Geen juridisch advies. AI-gegenereerde documentintelligentie: controleer altijd aan de hand van de brondocumenten.",
+  "Notes":"Notities","Files":"Bestanden","Preview":"Voorbeeld",
+  // settings
+  "Your profile, the language and how the app looks.":"Uw profiel, de taal en hoe de app eruitziet.",
+  "My Profile":"Mijn profiel","Upload Photo":"Foto uploaden","Remove":"Verwijderen",
+  "Display Name":"Weergavenaam","About":"Over","Save Profile":"Profiel opslaan",
+  "Models":"Modellen","Chat Model":"Chatmodel",
+  "Primary LLM — answers, summaries, wiki":"Primair LLM — antwoorden, samenvattingen, wiki",
+  "Embedding Model":"Embeddingmodel","⚠ Changing requires full re-index":"⚠ Wijzigen vereist een volledige herindexering",
+  "Vision Model":"Visiemodel","(for image analysis)":"(voor beeldanalyse)",
+  "Must support images — e.g. gemma3, llava, minicpm-v, qwen2-vl":"Moet afbeeldingen ondersteunen — bv. gemma3, llava, minicpm-v, qwen2-vl",
+  "Language of the app and the answers":"Taal van de app en de antwoorden",
+  "New clients use it unless you set another language for a client.":"Nieuwe cliënten krijgen deze taal, tenzij u voor een cliënt een andere kiest.",
+  "The assistant is not available right now. Please try again in a moment.":"De assistent is nu niet beschikbaar. Probeer het zo meteen opnieuw.",
+  "Images can't be read right now.":"Afbeeldingen kunnen nu niet worden gelezen.",
+  "Reading across several documents...":"Meerdere documenten worden gelezen...",
+  "This client's documents can't be searched right now; answering without them.":"De documenten van deze cliënt kunnen nu niet worden doorzocht; het antwoord komt zonder.",
+  "The documents can't be searched right now; answering without them.":"De documenten kunnen nu niet worden doorzocht; het antwoord komt zonder.",
+  "No answer came back. Please try again.":"Er kwam geen antwoord. Probeer het opnieuw.",
+  "Retrieval":"Ophalen","Default Top-K":"Standaard Top-K","Chunk Size (words)":"Fragmentgrootte (woorden)",
+  "Overlap (words)":"Overlap (woorden)","Extraction Mode":"Extractiemodus","Table Format":"Tabelformaat",
+  "Query Expansion":"Zoekuitbreiding","Second Retrieval Pass":"Tweede ophaalronde",
+  "Answer Templates":"Antwoordsjablonen","Context Window (num_ctx tokens)":"Contextvenster (num_ctx tokens)",
+  "Temperature":"Temperatuur","Top-P":"Top-P","Repeat Penalty":"Herhalingsstraf",
+  "Appearance":"Weergave","Theme":"Thema","Dark":"Donker","Light":"Licht",
+  "Density":"Dichtheid","Compact":"Compact","Comfortable":"Comfortabel","Cozy":"Ruim",
+  "Accent Color":"Accentkleur","Custom":"Aangepast","⌨ Keyboard shortcuts":"⌨ Sneltoetsen",
+  "System Prompt":"Systeemprompt","Save Settings":"Instellingen opslaan","✓ Saved":"✓ Opgeslagen",
+  "Off":"Uit","On (retry weak searches)":"Aan (zwakke zoekopdrachten opnieuw)",
+  "On (structured formats)":"Aan (gestructureerde formaten)","Auto (short queries only)":"Auto (alleen korte vragen)",
+  "Always":"Altijd",
+  // auth
+  "Sign in to continue":"Log in om door te gaan","Username":"Gebruikersnaam","Password":"Wachtwoord",
+  "Sign In":"Inloggen","No account? Register":"Nog geen account? Registreren",
+  "Create your account":"Maak je account aan","Create Account":"Account aanmaken",
+  "Already have an account? Sign in":"Al een account? Inloggen",
+  "username":"gebruikersnaam","password":"wachtwoord","Your name":"Je naam",
+  // toasts / status
+  "Chat history cleared":"Chatgeschiedenis gewist","Settings saved":"Instellingen opgeslagen",
+  "Save failed":"Opslaan mislukt","Connected":"Verbonden","Disconnected":"Verbinding verbroken",
+  "Connecting...":"Verbinden...","Username and password required":"Gebruikersnaam en wachtwoord vereist",
+  "Connection error":"Verbindingsfout",
+  // a kept citation
+  "Unchanged since this answer.":"Ongewijzigd sinds dit antwoord.",
+  "Changed since this answer.":"Gewijzigd sinds dit antwoord.",
+  "Only the start of this passage was kept.":"Alleen het begin van deze passage is bewaard.",
+  // history and the documents for a chat
+  "Back to chat":"Terug naar chat","Today":"Vandaag","Yesterday":"Gisteren",
+  "Earlier this week":"Eerder deze week","No chats yet for this client.":"Nog geen chats voor deze cliënt.",
+  "Could not load the chats.":"De chats konden niet worden geladen.","(empty chat)":"(lege chat)",
+  "Delete chat":"Chat verwijderen","Delete this chat?":"Deze chat verwijderen?",
+  "Documents: All":"Documenten: alle","of":"van","Documents for this chat":"Documenten voor deze chat",
+  "Answers in this chat use only the ticked documents.":"Antwoorden in deze chat gebruiken alleen de aangevinkte documenten.",
+  "Select all":"Alles selecteren","Clear":"Wissen","Use these":"Gebruiken",
+  "Tick at least one document.":"Vink minstens één document aan.",
+  "Could not load the documents.":"De documenten konden niet worden geladen.",
+  "No documents are ready yet.":"Er zijn nog geen documenten klaar.",
+  // files and the reader
+  "Add files":"Bestanden toevoegen",
+  "Drop them here or tap to choose. PDF, Word, text and more, up to 50 MB each.":"Sleep ze hierheen of tik om te kiezen. PDF, Word, tekst en meer, tot 50 MB per bestand.",
+  "Could not load the files.":"De bestanden konden niet worden geladen.",
+  "No files yet. Add the first one above.":"Nog geen bestanden. Voeg hierboven het eerste toe.",
+  "Can't be read":"Niet leesbaar","Left out":"Weggelaten","Getting ready":"Wordt klaargemaakt",
+  "Not ready":"Niet klaar","Try again":"Opnieuw proberen",
+  "Could not start. Try again in a moment.":"Kon niet starten. Probeer het zo opnieuw.",
+  "Delete file":"Bestand verwijderen","Remove this file and everything learned from it?":"Dit bestand verwijderen, met alles wat eruit is gehaald?",
+  "Annotations":"Aantekeningen","Ask about this":"Hierover vragen",
+  "Note":"Notitie","Write a note":"Notitie schrijven","New note":"Nieuwe notitie","Title":"Titel",
+  "Keep with client":"Bewaren bij cliënt","Save note":"Notitie opslaan",
+  "Add a client first, then write the note.":"Voeg eerst een cliënt toe en schrijf dan de notitie.",
+  "Write something first.":"Schrijf eerst iets.","Note saved to":"Notitie opgeslagen bij",
+  "The note was not saved.":"De notitie is niet opgeslagen.",
+  "File deleted":"Bestand verwijderd","waiting":"wacht","uploading…":"uploaden…","added":"toegevoegd",
+  "failed":"mislukt","Too large (max 50 MB)":"Te groot (max 50 MB)",
+  "Added. Getting the files ready for chat.":"Toegevoegd. De bestanden worden klaargemaakt voor de chat.",
+  "General file":"Algemeen dossier","Deleted":"Verwijderd",
+  "this client and all its files and chats are deleted for good.":"deze cliënt wordt met alle bestanden en chats definitief verwijderd.",
+};
+function uiT(s){ return (UI_LANG === 'nl' && MAP_EN_NL[s]) ? MAP_EN_NL[s] : s; }
+const _i18nText = new WeakMap();
+const _i18nAttr = new WeakMap();
+const _I18N_SKIP = new Set(['SCRIPT','STYLE','NOSCRIPT','TEXTAREA']);
+function _i18nNode(node, lang){
+  if (!_i18nText.has(node)) _i18nText.set(node, node.nodeValue);
+  const orig = _i18nText.get(node);
+  const key = (orig || '').trim();
+  if (!key) return;
+  node.nodeValue = (lang === 'nl' && MAP_EN_NL[key]) ? orig.replace(key, MAP_EN_NL[key]) : orig;
+}
+function _i18nAttrs(el, lang){
+  let store = _i18nAttr.get(el); if (!store){ store = {}; _i18nAttr.set(el, store); }
+  for (const a of ['placeholder','title','aria-label','alt','data-label']){
+    if (!el.hasAttribute(a)) continue;
+    if (!(a in store)) store[a] = el.getAttribute(a);
+    const orig = store[a]; const key = (orig || '').trim();
+    el.setAttribute(a, (lang === 'nl' && MAP_EN_NL[key]) ? MAP_EN_NL[key] : orig);
+  }
+}
+function applyTranslations(lang){
+  lang = lang || UI_LANG; UI_LANG = lang;
+  document.querySelectorAll('[placeholder],[title],[aria-label],[alt],[data-label]').forEach(el => {
+    if (_I18N_SKIP.has(el.tagName) || el.closest('#react-chat-root')) return;
+    _i18nAttrs(el, lang);
+  });
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+    acceptNode(n){
+      const p = n.parentElement;
+      if (!p || _I18N_SKIP.has(p.tagName) || p.closest('#react-chat-root')) return NodeFilter.FILTER_REJECT;
+      return (n.nodeValue && n.nodeValue.trim()) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+    }
+  });
+  const nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(n => _i18nNode(n, lang));
+}
+window.uiT = uiT; window.applyTranslations = applyTranslations;
+Object.defineProperty(window, 'UI_LANG', { get(){ return UI_LANG; } });
+
+// ── STATE ─────────────────────────────────────────────────
+let groups       = [];
+let cfg          = {};
+let curGroup     = null;
+let curTab       = 'chat';
+let lastSources  = [];
+
+// modal state
+let editGroupId     = null;
+let gmColor         = COLORS[0];
+let gmEmoji         = EMOJIS[0];
+let gmLang          = DEFAULT_LANG;
+let pendingConfirm  = null;
+
+// poll interval
+let pollTmr = null;
+
+// auth state
+let authToken   = store.get('rag_token') || '';
+let authUser    = null;
+let authMode    = 'login'; // 'login' or 'register'
+
+window.__ragChatState = () => ({ group: curGroup, cfg, token: authToken });
+function notifyRagStateChange() {
+  window.dispatchEvent(new CustomEvent('rag:state-change'));
+}
+
+function setShellChatStatus(state, label) {
+  const color = {
+    connected: 'green',
+    ready: 'green',
+    sending: 'yellow',
+    received: 'yellow',
+    working: 'yellow',
+    connecting: 'yellow',
+    disconnected: 'red',
+    error: 'red',
+  }[state] || 'yellow';
+  setWS(color, label || (color === 'green' ? 'Connected' : color === 'red' ? 'Disconnected' : 'Connecting...'));
+}
+
+window.addEventListener('rag:chat-connection', e => {
+  const detail = e.detail || {};
+  setShellChatStatus(detail.state, detail.label);
+});
+
+// ── AUTH ──────────────────────────────────────────────────
+async function checkAuth() {
+  const screen = document.getElementById('auth-screen');
+  try {
+    const status = await fetch('/api/auth/status').then(r => r.json());
+    if (!status.has_users) {
+      // No users yet  -  skip auth, let first user register on first visit
+      screen.style.display = 'none';
+      return true;
+    }
+    // Users exist  -  need auth
+    if (authToken) {
+      try {
+        const me = await api('/api/auth/me');
+        authUser = me.user;
+        screen.style.display = 'none';
+        return true;
+      } catch(e) {
+        // Token expired/invalid
+        authToken = '';
+        store.del('rag_token');
+      }
+    }
+    screen.style.display = 'flex';
+    // Accounts are admin-provisioned once the box is set up (see routes/auth.py:
+    // /api/auth/register is admin-only post-bootstrap). So the login screen only
+    // offers Sign In — hide the register toggle so nobody hits a guaranteed 401.
+    authMode = 'login';
+    const tgl = document.getElementById('auth-toggle');
+    if (tgl) tgl.style.display = 'none';
+    setTimeout(() => document.getElementById('auth-user')?.focus(), 100);
+    return false;
+  } catch(e) {
+    // Can't reach auth endpoint  -  no auth configured, skip
+    screen.style.display = 'none';
+    return true;
+  }
+}
+
+function toggleAuthMode() {
+  authMode = authMode === 'login' ? 'register' : 'login';
+  const reg = authMode === 'register';
+  document.getElementById('auth-btn').textContent = reg ? 'Create Account' : 'Sign In';
+  document.getElementById('auth-toggle').textContent = reg ? 'Already have an account? Sign in' : 'No account? Register';
+  document.getElementById('auth-subtitle').textContent = reg ? 'Create your account' : 'Sign in to continue';
+  const lf = document.getElementById('auth-lang-field');
+  if (lf) lf.style.display = reg ? '' : 'none';
+  document.getElementById('auth-error').style.display = 'none';
+  applyTranslations();
+}
+
+async function doAuth() {
+  const user = document.getElementById('auth-user').value.trim();
+  const pass = document.getElementById('auth-pass').value;
+  const errEl = document.getElementById('auth-error');
+  if (!user || !pass) { errEl.textContent = 'Username and password required'; errEl.style.display = 'block'; return; }
+
+  const endpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/register';
+  const payload = {username: user, password: pass};
+  if (authMode === 'register') {
+    payload.language = document.getElementById('auth-language')?.value || 'nl';
+  }
+  try {
+    const r = await fetch(endpoint, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}));
+      errEl.textContent = d.detail || `Error ${r.status}`;
+      errEl.style.display = 'block';
+      return;
+    }
+    const d = await r.json();
+    authToken = d.token;
+    authUser  = d.user;
+    store.set('rag_token', authToken);
+    document.getElementById('auth-screen').style.display = 'none';
+    errEl.style.display = 'none';
+    startApp();
+  } catch(e) {
+    errEl.textContent = 'Connection error'; errEl.style.display = 'block';
+  }
+}
+
+function logout() {
+  authToken = '';
+  authUser  = null;
+  store.del('rag_token');
+  location.reload();
+}
+
+// ── INIT ──────────────────────────────────────────────────
+async function init() {
+  applyPrefs();
+  applyBranding();   // pre-auth too: login screen branding + disclaimer (/api/meta is public)
+  // Restore sidebar collapse state
+  if (store.get('rag_sb_collapsed') === '1') {
+    document.body.classList.add('sb-collapsed');
+  }
+  registerSW();
+  bindShortcuts();
+  // Delegated lightbox: click any img inside #messages to zoom
+  document.getElementById('messages')?.addEventListener('click', e => {
+    const img = e.target.closest('img');
+    if (!img) return;
+    const grid = img.closest('.msg-img-grid');
+    if (grid) {
+      const imgs = [...grid.querySelectorAll('img')];
+      const idx  = imgs.indexOf(img);
+      openLightbox(img.src, imgs.map(i => i.src), idx);
+    } else {
+      openLightbox(img.src);
+    }
+  });
+  const authed = await checkAuth();
+  if (authed) startApp();
+}
+
+function applyPrefs() {
+  const theme   = currentTheme();
+  const density = store.get('rag_density') || 'comfortable';
+  const light   = LIGHT_THEMES.includes(theme);
+  document.documentElement.setAttribute('data-theme', theme);
+  document.documentElement.setAttribute('data-density', density);
+  const meta = document.getElementById('meta-theme-color');
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--p-bg').trim();
+  if (meta && bg) meta.setAttribute('content', `rgb(${bg})`);
+  const tbtn = document.getElementById('theme-toggle-btn');
+  if (tbtn) tbtn.innerHTML = light
+    ? '<svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>'
+    : '<svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path stroke-linecap="round" d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4l1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4m11.4-11.4l1.4-1.4"/></svg>';
+  const hljsLink = document.getElementById('hljs-theme');
+  if (hljsLink) {
+    hljsLink.href = light
+      ? '/static/vendor/hljs-github.min.css'
+      : '/static/vendor/hljs-github-dark.min.css';
+  }
+  if (_brandingAccentColor) {
+    document.documentElement.style.setProperty('--accent', _brandingAccentColor);
+  }
+}
+
+// The sidebar button flips between the default dark and light presets.
+function toggleTheme() {
+  store.set('law_theme', LIGHT_THEMES.includes(currentTheme()) ? 'midnight' : 'daylight');
+  applyPrefs();
+  const th = document.getElementById('s-theme');
+  if (th) th.value = currentTheme();
+}
+
+function setTheme(t) {
+  store.set('law_theme', t);
+  applyPrefs();
+}
+
+function setDensity(d) {
+  store.set('rag_density', d);
+  applyPrefs();
+}
+
+function registerSW() {
+  if (!('serviceWorker' in navigator)) return;
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') return;
+  navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(err => console.warn('SW register failed', err));
+}
+
+function bindShortcuts() {
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      closeGroupModal(); cancelConfirm(); closeSrcModal(); closeDocPicker(); closeNoteModal();
+      const am = document.getElementById('auth-screen');
+      if (am && am.style.display === 'flex') return;
+    }
+    const tag = (e.target && e.target.tagName) || '';
+    const inInput = tag === 'INPUT' || tag === 'TEXTAREA' || (e.target && e.target.isContentEditable);
+
+    // ⌘/Ctrl+K  -  focus chat input or open search
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+      e.preventDefault();
+      const chatInp = document.getElementById('chat-input');
+      if (chatInp && document.getElementById('panel-chat')?.classList.contains('active')) {
+        chatInp.focus();
+      }
+      return;
+    }
+    // ⌘/Ctrl+/  -  show shortcuts help
+    if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+      e.preventDefault();
+      showShortcutsHelp();
+      return;
+    }
+    // ⌘/Ctrl+B  -  toggle sidebar (mobile)
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'b' || e.key === 'B')) {
+      e.preventDefault();
+      const sb = document.getElementById('sidebar');
+      if (sb) sb.classList.toggle('open');
+      return;
+    }
+    // Tab navigation with 1..4 when not typing
+    if (!inInput && !e.ctrlKey && !e.metaKey && !e.altKey && curGroup) {
+      const map = { '1':'chat', '2':'map', '3':'docs', '4':'summaries' };
+      if (map[e.key] && document.getElementById('view-group').classList.contains('active')) {
+        e.preventDefault();
+        switchTab(map[e.key]);
+      }
+    }
+  });
+}
+
+function showShortcutsHelp() {
+  const body = `
+    <div style="display:grid;grid-template-columns:1fr auto;gap:10px 16px;font-size:var(--fs-xs)">
+      <div>Focus chat input</div><div><span class="kbd">Ctrl</span> + <span class="kbd">K</span></div>
+      <div>Show this help</div><div><span class="kbd">Ctrl</span> + <span class="kbd">/</span></div>
+      <div>Toggle sidebar</div><div><span class="kbd">Ctrl</span> + <span class="kbd">B</span></div>
+      <div>Close modal / cancel</div><div><span class="kbd">Esc</span></div>
+      <div>Switch to Chat</div><div><span class="kbd">1</span></div>
+      <div>Switch to Docs</div><div><span class="kbd">2</span></div>
+      <div>Switch to Preview</div><div><span class="kbd">3</span></div>
+      <div>Switch to History</div><div><span class="kbd">4</span></div>
+      <div>Send message</div><div><span class="kbd">Enter</span></div>
+      <div>New line in chat</div><div><span class="kbd">Shift</span> + <span class="kbd">Enter</span></div>
+    </div>`;
+  showInfoModal('Keyboard Shortcuts', body);
+}
+
+function showInfoModal(title, bodyHtml) {
+  let m = document.getElementById('info-modal');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'info-modal';
+    m.className = 'modal-bg';
+    m.innerHTML = `
+      <div class="modal-box" role="dialog" aria-labelledby="info-modal-title" aria-modal="true">
+        <div class="modal-hdr">
+          <div class="modal-title" id="info-modal-title"></div>
+          <button class="modal-close" onclick="closeInfoModal()" aria-label="Close">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="modal-body" id="info-modal-body"></div>
+      </div>`;
+    m.addEventListener('click', e => { if (e.target === m) closeInfoModal(); });
+    document.body.appendChild(m);
+  }
+  document.getElementById('info-modal-title').textContent = title;
+  document.getElementById('info-modal-body').innerHTML = bodyHtml;
+  m.classList.add('open');
+}
+
+function closeInfoModal() {
+  const m = document.getElementById('info-modal');
+  if (m) m.classList.remove('open');
+}
+
+async function startApp() {
+  applyBranding();
+  if (authUser) {
+    const row = document.getElementById('user-row');
+    const av  = document.getElementById('user-avatar');
+    const lbl = document.getElementById('user-name-lbl');
+    if (row) row.style.display = 'flex';
+    if (av)  av.textContent = (authUser.username || '?')[0].toUpperCase();
+    if (lbl) lbl.textContent = authUser.username + (authUser.role === 'admin' ? ' (admin)' : '');
+  }
+  await Promise.all([loadGroups(), loadCfg()]);
+  if (pollTmr) clearInterval(pollTmr);
+  pollTmr = setInterval(pollStatus, 7000);
+
+  const savedGroup = store.get('rag_group');
+  const savedView  = store.get('rag_view');
+  // Restore exact last view — group takes over only when the saved view was a group view
+  if (savedView === 'view-settings') {
+    showSettings();
+  } else if (savedView === 'view-map') {
+    openConceptMapView();
+  } else if (savedGroup && groups.find(g => g.id === savedGroup)) {
+    openGroup(savedGroup);
+  }
+}
+
+async function loadGroups() {
+  try {
+    const d = await api('/api/groups');
+    groups = d.groups || [];
+    // The server names every account's first client in Dutch; show it in the reader's language.
+    for (const g of groups) {
+      if (g.id !== 'default') continue;
+      if (['Algemeen dossier', 'General file'].includes(g.name)) g.name = uiT('General file');
+      if (['Algemeen dossier', 'General file'].includes(g.description)) g.description = uiT('General file');
+    }
+    renderSidebarGroups();
+    if (document.getElementById('view-home').classList.contains('active')) renderDashboard();
+    if (curGroup) {
+      const updated = groups.find(g => g.id === curGroup.id);
+      if (updated) { curGroup = updated; updateGroupHeader(); }
+    }
+    notifyRagStateChange();
+  } catch(e) { console.error('loadGroups', e); }
+}
+
+async function _maybeRefreshToken() {
+  if (!authToken) return;
+  try {
+    // Decode exp from JWT payload (no crypto needed — just base64)
+    const parts = authToken.split('.');
+    if (parts.length !== 3) return;
+    const payload = JSON.parse(atob(parts[1].replace(/-/g,'+').replace(/_/g,'/')));
+    const expiresInMs = (payload.exp * 1000) - Date.now();
+    // Refresh if less than 12h remaining
+    if (expiresInMs < 12 * 3600 * 1000) {
+      const d = await api('/api/auth/refresh', 'POST');
+      if (d.token) {
+        authToken = d.token;
+        store.set('rag_token', authToken);
+      }
+    }
+  } catch(e) { /* non-fatal */ }
+}
+
+let _isPollingStatus = false;
+async function pollStatus() {
+  if (_isPollingStatus) return;
+  _isPollingStatus = true;
+  try {
+    await _maybeRefreshToken();
+    await loadGroups();
+    if (curGroup && curTab === 'docs') await loadDocs(curGroup.id, false);
+  } finally {
+    _isPollingStatus = false;
+  }
+}
+
+async function loadCfg() {
+  try {
+    cfg = await api('/api/settings');
+    notifyRagStateChange();
+    // Apply the account's UI language to the whole shell.
+    applyTranslations(cfg.app_language || DEFAULT_LANG);
+  } catch(e) {}
+}
+
+// ── CONNECTION DOTS (driven by rag:chat-connection events from React) ──
+function setWS(color, txt) {
+  const dot = document.getElementById('ws-dot');
+  const lbl = document.getElementById('ws-lbl');
+  if (dot) dot.className = `dot dot-${color}`;
+  if (lbl) lbl.textContent = txt;
+  const cd = document.getElementById('chat-dot');
+  if (cd) {
+    cd.className = `dot dot-${color}`;
+    cd.title = txt;
+  }
+}
+
+// ── LIGHTBOX ──────────────────────────────────────────────
+let _lbSrcs = [];
+let _lbIdx  = 0;
+
+function openLightbox(src, allSrcs, idx) {
+  _lbSrcs = allSrcs || [src];
+  _lbIdx  = idx || 0;
+  _lbShow();
+  document.addEventListener('keydown', _lbKey);
+}
+
+function _lbShow() {
+  const lb  = document.getElementById('img-lightbox');
+  const img = document.getElementById('lb-img');
+  const cnt = document.getElementById('lb-counter');
+  if (!lb || !img) return;
+  img.src = _lbSrcs[_lbIdx];
+  lb.classList.add('open');
+  if (_lbSrcs.length > 1 && cnt) {
+    cnt.textContent = `${_lbIdx + 1} / ${_lbSrcs.length}`;
+    cnt.style.display = '';
+  } else if (cnt) {
+    cnt.style.display = 'none';
+  }
+}
+
+function closeLightbox(e) {
+  if (e && e.target.id === 'lb-img') return; // click on image itself = no close
+  document.getElementById('img-lightbox')?.classList.remove('open');
+  document.removeEventListener('keydown', _lbKey);
+}
+
+function _lbKey(e) {
+  if (e.key === 'Escape') { closeLightbox(); }
+  if (e.key === 'ArrowRight' && _lbIdx < _lbSrcs.length - 1) { _lbIdx++; _lbShow(); }
+  if (e.key === 'ArrowLeft'  && _lbIdx > 0)                   { _lbIdx--; _lbShow(); }
+}
+
+// ── NAVIGATION ────────────────────────────────────────────
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  if (id === 'view-home')     document.getElementById('nav-home')?.classList.add('active');
+  if (id === 'view-settings') document.getElementById('nav-settings')?.classList.add('active');
+  if (id === 'view-map')      document.getElementById('nav-map')?.classList.add('active');
+  store.set('rag_view', id);
+}
+
+function openConceptMapView() {
+  // If a group is open, switch to the map tab; otherwise show a global placeholder
+  if (curGroup) {
+    showView('view-group');
+    switchTab('map');
+    document.getElementById('nav-map')?.classList.add('active');
+  } else {
+    toast('Open a group first, then use the Concept Map tab', 'info');
+  }
+}
+
+function showHome() {
+  showView('view-home');
+  renderDashboard();
+  curGroup = null;
+  store.del('rag_group');
+  document.querySelectorAll('.nav-btn[id^="sb-grp-"]').forEach(b => b.classList.remove('active'));
+  document.body.classList.remove('in-group');
+  document.body.classList.remove('flat-tabs');
+  document.getElementById('mob-bar-title').textContent = window._brandAppName || 'pdm Legal Workspace';
+  closeSidebar();
+}
+
+function showSettings() {
+  showView('view-settings');
+  document.body.classList.remove('in-group');
+  document.body.classList.remove('flat-tabs');
+  document.getElementById('mob-bar-title').textContent = 'Settings';
+  loadSettingsUI();
+  loadProfile();
+  if (authUser?.role === 'admin') showAdminPanel();
+  applyTranslations();
+}
+
+function openGroup(id) {
+  const g = groups.find(x => x.id === id);
+  if (!g) return;
+  const prevGroupId = curGroup?.id;
+  curGroup = g;
+  // Reset map BEFORE switchTab so the async init isn't immediately destroyed
+  if (id !== prevGroupId) {
+    if (window.RagChat) window.RagChat.clear();
+    if (typeof ConceptMap !== 'undefined') { ConceptMap.destroy(); }
+    _cmInitialized = false;
+    _currentDocName = null;
+    prevActiveIdx = -1;
+    // Clear all stale content from the previous group immediately
+    const _clearIds = [
+      'file-list','sum-overview',
+      'sessions-list','prev-doc-list','doc-summaries-list',
+    ];
+    _clearIds.forEach(cid => { const el = document.getElementById(cid); if (el) el.innerHTML = ''; });
+  }
+  store.set('rag_group', id);
+  showView('view-group');
+  document.body.classList.add('in-group');
+  document.getElementById('mob-bar-title').textContent = g.name;
+  document.body.classList.add('flat-tabs');
+  updateGroupHeader();
+
+  let defaultTab = store.get(`rag_tab_${id}`) || 'chat';
+  if (defaultTab === 'upload') defaultTab = 'docs';
+  if (defaultTab === 'history') defaultTab = 'chat';
+  if (defaultTab === 'wiki') defaultTab = 'summaries';
+  // The reader needs a file picked from the list, so a reload lands on Files.
+  if (defaultTab === 'notes' || defaultTab === 'preview') defaultTab = 'docs';
+  if (!['chat','docs','wiki','map','summaries'].includes(defaultTab)) defaultTab = 'chat';
+  switchTab(defaultTab);
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`sb-grp-${id}`)?.classList.add('active');
+  if (_splitMode && curGroup) loadPreview(curGroup.id);
+  closeSidebar();
+  notifyRagStateChange();
+}
+
+function _clearAllPolls() {}
+
+let _curChatTab = 'chat';
+let _curKnowledgeTab = 'summaries';
+
+function switchTab(tab) {
+  _clearAllPolls();
+  if (tab === 'upload') tab = 'docs';
+  if (tab === 'files' || tab === 'notes') tab = 'docs';
+  // The old wiki is gone: its tab names open the Summary.
+  if (tab === 'knowledge' || tab === 'wiki') tab = 'summaries';
+
+  const knowledgeTabs = ['map','summaries'];
+
+  let activePanel;
+  if (tab === 'history')              activePanel = 'chat';
+  else if (knowledgeTabs.includes(tab)) activePanel = 'knowledge';
+  else                                activePanel = tab;
+
+  // preview shown but docs button stays highlighted; the map is the Graph main tab
+  const activeBtn = (tab === 'preview') ? 'docs' : (tab === 'map') ? 'graph' : activePanel;
+
+  curTab = tab;
+  if (curGroup) store.set(`rag_tab_${curGroup.id}`, tab);
+
+  ['chat','docs','preview','knowledge'].forEach(t => {
+    const panel = document.getElementById(`panel-${t}`);
+    if (!panel || (_splitMode && t === 'preview')) return;
+    panel.classList.toggle('active', t === activePanel);
+  });
+  // The graph fills the knowledge panel without the Wiki | Summaries strip.
+  document.getElementById('panel-knowledge')?.classList.toggle('graph-mode', tab === 'map');
+
+  ['chat','graph','docs','knowledge'].forEach(t => {
+    document.getElementById(`tab-btn-${t}`)?.classList.toggle('active', t === activeBtn);
+    document.getElementById(`mob-tab-btn-${t}`)?.classList.toggle('active', t === activeBtn);
+  });
+
+  if (tab === 'history') switchChatSubtab('history');
+  else if (activePanel === 'chat') switchChatSubtab('chat');
+  if (tab === 'docs') loadDocs(curGroup.id, true);
+  else clearTimeout(_fmPoll);
+  if (knowledgeTabs.includes(tab)) switchKnowledgeTab(tab);
+}
+
+// History replaces the chat in place; the same button brings the chat back.
+function switchChatSubtab(tab) {
+  _curChatTab = tab;
+  ['chat','history'].forEach(t => {
+    document.getElementById(`cstab-${t}`)?.classList.toggle('active', t === tab);
+  });
+  const hb = document.getElementById('chat-hist-btn');
+  if (hb) hb.textContent = uiT(tab === 'history' ? 'Back to chat' : 'History');
+  const db = document.getElementById('chat-docs-btn');
+  if (db) db.hidden = tab === 'history';
+  if (tab === 'history') loadHistory();
+}
+function toggleHistory() { switchChatSubtab(_curChatTab === 'history' ? 'chat' : 'history'); }
+
+function switchKnowledgeTab(tab) {
+  _curKnowledgeTab = tab;
+  if (curGroup) store.set(`rag_ktab_${curGroup.id}`, tab);
+  ['map','summaries'].forEach(t => {
+    document.getElementById(`ktab-${t}`)?.classList.toggle('active', t === tab);
+  });
+  if (tab === 'map') { initConceptMap(); return; }
+  if (typeof ConceptMap !== 'undefined' && _cmInitialized) { ConceptMap.destroy(); _cmInitialized = false; }
+  if (tab === 'summaries' && curGroup) { loadClientOverview(curGroup.id); loadDocSummaries(curGroup.id); }
+}
+
+// The Summary tab's head: the client overview written at indexing time, in plain text.
+async function loadClientOverview(groupId) {
+  const el = document.getElementById('sum-overview');
+  if (!el) return;
+  try {
+    const ov = await api(`/api/groups/${groupId}/overview`);
+    const topics = (ov.topics || []).slice(0, 8);
+    el.innerHTML = `
+      <h2 class="sum-title">${X(curGroup?.name || '')}</h2>
+      ${ov.summary ? `<p class="sum-text">${X(ov.summary)}</p>` : ''}
+      ${topics.length ? `<div class="sum-topics">${topics.map(t => `<span>${X(typeof t === 'string' ? t : (t.name || ''))}</span>`).join('')}</div>` : ''}`;
+  } catch (e) {
+    el.innerHTML = `<h2 class="sum-title">${X(curGroup?.name || '')}</h2>
+      <p class="sum-text sum-muted">${X(uiT('The overview appears here once the documents are ready.'))}</p>`;
+  }
+}
+
+// ── SIDEBAR COLLAPSE (desktop) ────────────────────────────
+function toggleSidebarDesktop() {
+  const collapsed = document.body.classList.toggle('sb-collapsed');
+  store.set('rag_sb_collapsed', collapsed ? '1' : '0');
+}
+
+// ── SPLIT VIEW ────────────────────────────────────────────
+let _splitMode = false;
+let _splitDragging = false;
+
+function toggleSplitView() {
+  _splitMode = !_splitMode;
+  const body    = document.getElementById('grp-body');
+  const handle  = document.getElementById('split-handle');
+  const secondary = document.getElementById('split-secondary');
+  const splitMain = document.getElementById('split-main');
+  const previewPanel = document.getElementById('panel-preview');
+  const btn = document.getElementById('split-toggle-btn');
+
+  if (_splitMode) {
+    // Move preview panel into secondary pane
+    secondary.appendChild(previewPanel);
+    previewPanel.classList.add('active');
+    previewPanel.style.display = 'flex';
+    // Show handle + secondary
+    handle.style.display = 'flex';
+    secondary.style.display = 'flex';
+    body.classList.add('split-mode');
+    // Set initial width
+    if (!body.style.getPropertyValue('--split-main-w')) {
+      body.style.setProperty('--split-main-w', '55%');
+    }
+    btn?.classList.add('active');
+    // Load preview content
+    if (curGroup) loadPreview(curGroup.id);
+  } else {
+    // Move preview panel back into split-main
+    splitMain.appendChild(previewPanel);
+    previewPanel.classList.remove('active');
+    previewPanel.style.display = '';
+    handle.style.display = 'none';
+    secondary.style.display = 'none';
+    body.classList.remove('split-mode');
+    btn?.classList.remove('active');
+    // Restore current tab
+    if (curTab === 'preview') switchTab('chat');
+    else switchTab(curTab);
+  }
+}
+
+function startSplitDrag(e) {
+  if (!_splitMode) return;
+  _splitDragging = true;
+  document.getElementById('split-handle')?.classList.add('dragging');
+  document.addEventListener('mousemove', onSplitDrag);
+  document.addEventListener('mouseup', endSplitDrag);
+  e.preventDefault();
+}
+
+function onSplitDrag(e) {
+  if (!_splitDragging) return;
+  const body = document.getElementById('grp-body');
+  const rect = body.getBoundingClientRect();
+  let pct = (e.clientX - rect.left) / rect.width * 100;
+  pct = Math.max(25, Math.min(75, pct));
+  body.style.setProperty('--split-main-w', `${pct.toFixed(1)}%`);
+}
+
+function endSplitDrag() {
+  _splitDragging = false;
+  document.getElementById('split-handle')?.classList.remove('dragging');
+  document.removeEventListener('mousemove', onSplitDrag);
+  document.removeEventListener('mouseup', endSplitDrag);
+}
+
+// ── Matter header overflow menu (Export / PDF / Edit / Delete) ──
+let _hdrMenuOpen = false;
+function toggleHdrMenu(e) {
+  e?.stopPropagation();
+  _hdrMenuOpen = !_hdrMenuOpen;
+  const menu = document.getElementById('hdr-menu');
+  const btn = document.getElementById('hdr-menu-btn');
+  if (menu) menu.style.display = _hdrMenuOpen ? 'flex' : 'none';
+  if (btn) btn.classList.toggle('active', _hdrMenuOpen);
+  if (_hdrMenuOpen) setTimeout(() => document.addEventListener('click', closeHdrMenuOutside, {once:true}), 0);
+}
+function closeHdrMenuOutside(e) {
+  const wrap = document.getElementById('hdr-menu-wrap');
+  if (wrap && !wrap.contains(e.target)) closeHdrMenu();
+  else if (_hdrMenuOpen) setTimeout(() => document.addEventListener('click', closeHdrMenuOutside, {once:true}), 0);
+}
+function closeHdrMenu() {
+  _hdrMenuOpen = false;
+  const menu = document.getElementById('hdr-menu');
+  const btn = document.getElementById('hdr-menu-btn');
+  if (menu) menu.style.display = 'none';
+  if (btn) btn.classList.remove('active');
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────
+function renderDashboard() {
+  const grid = document.getElementById('groups-grid');
+  if (!grid) return;
+
+  if (!groups.length) {
+    grid.innerHTML = `
+      <div style="grid-column:1/-1;padding:40px 24px;text-align:center;border:2px dashed var(--border2);border-radius:16px;background:var(--surface)">
+        <div style="font-size:var(--fs-lg);font-weight:700;color:var(--text);margin-bottom:6px">Welcome to pdm Legal Workspace</div>
+        <div style="font-size:var(--fs-xs);color:var(--text2);max-width:440px;margin:0 auto 18px;line-height:1.6">
+          Create a <b>knowledge group</b> to upload documents (PDFs, notebooks, slides, spreadsheets, notes)
+          and ask questions grounded in your own material. Everything stays on this machine.
+        </div>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="openCreateModal()">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            Create first group
+          </button>
+          <button class="btn btn-secondary" onclick="showShortcutsHelp()">Keyboard shortcuts</button>
+        </div>
+        <div style="margin-top:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;max-width:640px;margin-left:auto;margin-right:auto;text-align:left">
+          <div style="padding:12px;background:var(--card);border:1px solid var(--border);border-radius:10px">
+            <div style="font-size:var(--fs-xs);color:var(--accent-text);font-weight:700;margin-bottom:4px">Step 1</div>
+            <div style="font-size:var(--fs-xs);color:var(--text2);line-height:1.5">Create a group and upload your documents.</div>
+          </div>
+          <div style="padding:12px;background:var(--card);border:1px solid var(--border);border-radius:10px">
+            <div style="font-size:var(--fs-xs);color:var(--accent-text);font-weight:700;margin-bottom:4px">Step 2</div>
+            <div style="font-size:var(--fs-xs);color:var(--text2);line-height:1.5">Click <b>Re-index</b> to embed the docs locally.</div>
+          </div>
+          <div style="padding:12px;background:var(--card);border:1px solid var(--border);border-radius:10px">
+            <div style="font-size:var(--fs-xs);color:var(--accent-text);font-weight:700;margin-bottom:4px">Step 3</div>
+            <div style="font-size:var(--fs-xs);color:var(--text2);line-height:1.5">Ask questions about the documents and see how they connect.</div>
+          </div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = groups.map(g => {
+    const graph = _miniGraphs[g.id];
+    return `
+    <article class="g-card" onclick="openGroup('${g.id}');switchTab('chat')">
+      <div class="g-graph" id="g-graph-${g.id}">${graph ? graph.html : ''}</div>
+      <div class="g-card-body">
+        <div class="g-card-head">
+          <span class="grp-dot" style="background:${grpColor(g.color)}"></span>
+          <div class="g-name">${X(g.name)}</div>
+          <div class="g-card-tools">
+            <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();openEditModal('${g.id}')" title="Edit client" aria-label="Edit client">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            </button>
+            <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();deleteGroupById('${g.id}')" title="Delete client" aria-label="Delete client">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="g-desc">${X(g.overview_snippet || g.description || '')}</div>
+        <div class="g-meta">
+          <span><b>${g.doc_count}</b> ${uiT('documents')}</span>
+          <span><b>${fmtN(g.chunk_count)}</b> ${uiT('passages')}</span>
+          ${idxState(g)}
+          <span class="g-lang">${(g.language || DEFAULT_LANG).toUpperCase()}</span>
+        </div>
+      </div>
+    </article>`;
+  }).join('');
+  groups.forEach(g => drawMiniGraph(g));
+}
+
+// A matter's state in one quiet line: a dot and a word, never a coloured pill.
+function idxState(g) {
+  const [cls, word] = g.is_indexing ? ['is-busy', 'Indexing']
+    : g.chunk_count > 0 ? ['is-ok', 'Indexed'] : ['is-none', 'Not indexed'];
+  return `<span class="idx-state ${cls}">${uiT(word)}</span>`;
+}
+
+// ── MINI GRAPHS ───────────────────────────────────────────
+// Each matter card shows its graph (a click opens the chat): documents and the concepts they share, laid
+// out once (no animation) and kept until the matter's index changes, so the
+// dashboard's polling never refetches it. Colours are classes (.mg-*), never literals.
+const _miniGraphs = {};
+async function drawMiniGraph(g) {
+  const key = `${g.chunk_count}:${g.doc_count}`;
+  const have = _miniGraphs[g.id];
+  if (have && (have.key === key || have.pending)) return;
+  _miniGraphs[g.id] = { key, pending: true, html: have ? have.html : '' };
+  let nodes = [], edges = [];
+  try {
+    const d = await api(`/api/graph/visualize?group_id=${encodeURIComponent(g.id)}&limit=80&min_connections=0`);
+    nodes = d.nodes || []; edges = d.edges || [];
+  } catch (e) { /* the card still opens; it just has no picture */ }
+  const W = 320, H = 132;
+  let html;
+  if (!nodes.length || typeof d3 === 'undefined') {
+    html = `<div class="g-graph-empty">${uiT('No graph yet')}</div>`;
+  } else {
+    const ids = new Set(nodes.map(n => n.id));
+    const links = edges.filter(e => ids.has(e.source) && ids.has(e.target)).map(e => ({ source: e.source, target: e.target }));
+    const sim = d3.forceSimulation(nodes)
+      .force('link', d3.forceLink(links).id(n => n.id).distance(28).strength(0.6))
+      .force('charge', d3.forceManyBody().strength(-60))
+      .force('x', d3.forceX(W / 2).strength(0.06))
+      .force('y', d3.forceY(H / 2).strength(0.14))
+      .stop();
+    for (let i = 0; i < 220; i++) sim.tick();
+    const xs = nodes.map(n => n.x), ys = nodes.map(n => n.y);
+    const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+    const k = Math.min((W - 24) / Math.max(1, x1 - x0), (H - 24) / Math.max(1, y1 - y0), 2.2);
+    const px = n => (W / 2 + (n.x - (x0 + x1) / 2) * k).toFixed(1);
+    const py = n => (H / 2 + (n.y - (y0 + y1) / 2) * k).toFixed(1);
+    const lines = links.map(l => `<line x1="${px(l.source)}" y1="${py(l.source)}" x2="${px(l.target)}" y2="${py(l.target)}"/>`).join('');
+    const dots = nodes.map(n => {
+      const doc = n.type === 'Document';
+      return `<circle class="${doc ? 'mg-doc' : 'mg-node'}" cx="${px(n)}" cy="${py(n)}" r="${doc ? 4.5 : 3}"/>`;
+    }).join('');
+    const nd = nodes.filter(n => n.type === 'Document').length;
+    html = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${nd} documents, ${nodes.length - nd} concepts"><g class="mg-edges">${lines}</g>${dots}</svg>`;
+  }
+  _miniGraphs[g.id] = { key, html };
+  const el = document.getElementById(`g-graph-${g.id}`);
+  if (el) el.innerHTML = html;
+}
+
+
+// ── SIDEBAR GROUPS ────────────────────────────────────────
+function renderSidebarGroups() {
+  const el = document.getElementById('sb-groups');
+  el.innerHTML = groups.map(g => {
+    const cnt = g.chunk_count > 999 ? (g.chunk_count/1000).toFixed(1)+'k' : g.chunk_count;
+    return `<button class="nav-btn" id="sb-grp-${g.id}" onclick="openGroup('${g.id}')">
+      <span class="grp-dot" style="background:${grpColor(g.color)}"></span>
+      <span class="grp-label">${X(g.name)}</span>
+      ${g.chunk_count ? `<span class="grp-badge">${cnt}</span>` : ''}
+    </button>`;
+  }).join('');
+}
+
+// ── GROUP HEADER ──────────────────────────────────────────
+function updateGroupHeader() {
+  if (!curGroup) return;
+  const g = curGroup;
+  const langCode = (g.language || DEFAULT_LANG).toUpperCase();
+  const langName = LANGUAGES[g.language || DEFAULT_LANG] || 'English';
+  document.getElementById('grp-name').innerHTML  = X(g.name) + ` <span class="hdr-lang" title="${X(langName)}">${langCode}</span>`;
+  document.getElementById('grp-desc').textContent  = g.description || '';
+
+  document.getElementById('grp-idx-pill').innerHTML = idxState(g);
+  notifyRagStateChange();
+}
+
+// ── MARKDOWN + THINKING ───────────────────────────────────
+function highlightIn(el) {
+  el.querySelectorAll('pre code').forEach(block => {
+    try { hljs.highlightElement(block); } catch(_) {}
+  });
+}
+
+// ── DOCUMENTS ─────────────────────────────────────────────
+let _docsGid = '';
+
+async function loadDocs(groupId, showLoading=true) {
+  _docsGid = groupId;
+  return loadFileManager(groupId, showLoading);
+}
+
+// ── FILES ─────────────────────────────────────────────────────────────────────
+// One flat list of the client's files: a red cross until a file is ready, its percentage
+// while it is being read, a green tick once chat can use it. While anything is indexing
+// the list asks again every 2 seconds, then stops.
+let _fmGid      = '';
+let _fmAllFiles = [];
+let _fmDisabled = new Set(); // rel_paths left out of the index (older setups)
+var _fmPoll     = null;   // var: switchTab may run before this line
+let _fmWasIndexing = false;
+let _fmExpectUntil = 0;      // keep asking a few seconds after a start, until the run shows
+const _fmRetried = new Set(); // files already sent round again once by themselves
+
+async function loadFileManager(groupId, showLoading=true) {
+  const list = document.getElementById('file-list');
+  if (list && showLoading) list.innerHTML = `<li>${skel()}</li>`;
+  clearTimeout(_fmPoll);
+  try {
+    const tree = await api(`/api/groups/${groupId}/files/tree`);
+    if (curGroup?.id !== groupId) return;
+    _fmGid      = groupId;
+    _fmAllFiles = tree.files || [];
+    _fmDisabled = new Set(tree.disabled || []);
+    renderFileManager();
+    const indexing = !!tree.indexing;
+    // A file uploaded while a run was busy is missed by it: send those round once more.
+    if (_fmWasIndexing && !indexing) {
+      const missed = _fmAllFiles.filter(f => _fmNeedsIndex(f) && !_fmRetried.has(f.rel_path));
+      if (missed.length) { missed.forEach(f => _fmRetried.add(f.rel_path)); fmRetry(true); return; }
+    }
+    _fmWasIndexing = indexing;
+    if ((indexing || Date.now() < _fmExpectUntil) && curTab === 'docs') {
+      _fmPoll = setTimeout(() => loadFileManager(groupId, false), 2000);
+    }
+  } catch(e) {
+    if (list) list.innerHTML = `<li class="file-none">${X(uiT('Could not load the files.'))}</li>`;
+  }
+}
+
+function _fmNeedsIndex(f) {
+  return f.supported && !_fmDisabled.has(f.rel_path) && !f.indexed && f.progress === undefined;
+}
+
+async function loadDocSummaries(groupId) {
+  const el = document.getElementById('doc-summaries-list');
+  if (!el) return;
+  const sec = document.getElementById('doc-summaries-section');
+  try {
+    const d = await api(`/api/groups/${groupId}/summaries`);
+    const sums = d.summaries || {};
+    const keys = Object.keys(sums);
+    if (!keys.length) {
+      if (sec) sec.style.display = '';
+      el.innerHTML = `<div style="color:var(--text3);font-size:var(--fs-xs)">${uiT("Each document's summary appears here once it is ready.")}</div>`;
+      return;
+    }
+    if (sec) sec.style.display = '';
+    el.innerHTML = keys.map(name => {
+      const s = sums[name];
+      const points = (s.key_points || []).slice(0, 3);
+      return `<article class="sum-doc">
+        <h3>${X(s.title || name.split('/').pop())}</h3>
+        ${s.tldr ? `<p>${X(s.tldr)}</p>` : ''}
+        ${points.length ? `<ul>${points.map(p => `<li>${X(p)}</li>`).join('')}</ul>` : ''}
+      </article>`;
+    }).join('');
+  } catch(e) {
+    if (sec) sec.style.display = '';
+    const el2 = document.getElementById('doc-summaries-list');
+    if (el2) el2.innerHTML = `<div style="color:var(--text3);font-size:var(--fs-xs)">No summaries generated yet.</div>`;
+  }
+}
+
+const _ICON_OK  = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>';
+const _ICON_NO  = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>';
+const _ICON_DEL = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.87 12.14A2 2 0 0116.14 21H7.86a2 2 0 01-1.99-1.86L5 7m5 4v6m4-6v6M4 7h16M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/></svg>';
+
+function _fmState(f, indexing) {
+  if (!f.supported) return `<span class="file-state is-muted">${X(uiT("Can't be read"))}</span>`;
+  if (_fmDisabled.has(f.rel_path)) return `<span class="file-state is-muted">${X(uiT('Left out'))}</span>`;
+  if (f.progress !== undefined) {
+    return `<span class="file-state is-busy" title="${X(uiT('Getting ready'))}">${f.progress}%
+      <span class="file-bar" aria-hidden="true"><span style="width:${f.progress}%"></span></span></span>`;
+  }
+  if (f.indexed) return `<span class="file-state is-ok" title="${X(uiT('Ready'))}" aria-label="${X(uiT('Ready'))}">${_ICON_OK}</span>`;
+  const retry = indexing ? '' : `<button class="btn btn-secondary btn-sm file-retry" onclick="fmRetry()">${X(uiT('Try again'))}</button>`;
+  return `${retry}<span class="file-state is-no" title="${X(uiT('Not ready'))}" aria-label="${X(uiT('Not ready'))}">${_ICON_NO}</span>`;
+}
+
+function renderFileManager() {
+  const list = document.getElementById('file-list');
+  if (!list) return;
+  if (!_fmAllFiles.length) {
+    list.innerHTML = `<li class="file-none">${X(uiT('No files yet. Add the first one above.'))}</li>`;
+    return;
+  }
+  const indexing = _fmAllFiles.some(f => f.progress !== undefined);
+  const lang = UI_LANG === 'nl' ? 'nl-NL' : 'en-GB';
+  const files = [..._fmAllFiles].sort((a, b) => a.name.localeCompare(b.name, lang));
+  list.innerHTML = files.map(f => {
+    const ext = (f.name.split('.').pop() || '').toUpperCase().slice(0, 4);
+    const date = new Date(f.modified).toLocaleDateString(lang, { day: 'numeric', month: 'short', year: 'numeric' });
+    const rp = X(JSON.stringify(f.rel_path));
+    return `<li class="file-row">
+      <button class="file-open" onclick="openReader(${rp})" ${f.supported ? '' : 'disabled'}>
+        <span class="ext-tag">${X(ext)}</span>
+        <span class="file-main"><span class="file-name">${X(f.name)}</span><span class="file-sub">${X(date)}</span></span>
+      </button>
+      ${_fmState(f, indexing)}
+      <button class="btn btn-ghost btn-icon file-del" onclick="fmDeleteFile(${rp},${X(JSON.stringify(f.name))})" title="${X(uiT('Delete'))}" aria-label="${X(uiT('Delete'))} ${X(f.name)}">${_ICON_DEL}</button>
+    </li>`;
+  }).join('');
+}
+
+// Re-run indexing for whatever is not ready. A run that is already busy picks the files
+// up when it is done (loadFileManager sends missed files round once).
+async function fmRetry(quiet=false) {
+  _fmExpectUntil = Date.now() + 8000;
+  try { await api(`/api/groups/${_fmGid}/index?reset=false`, 'POST'); }
+  catch(e) { if (!quiet && !/409|already/i.test(e.message)) toast(uiT('Could not start. Try again in a moment.'), 'error'); }
+  loadFileManager(_fmGid, false);
+}
+
+async function fmDeleteFile(relPath, name) {
+  try { await showConfirm(uiT('Delete file'), `${uiT('Remove this file and everything learned from it?')} ${name}`); }
+  catch { return; }
+  try {
+    await api(`/api/groups/${_fmGid}/documents/${relPath.split('/').map(encodeURIComponent).join('/')}`, 'DELETE');
+    toast(uiT('File deleted'), 'success');
+    loadFileManager(_fmGid, false);
+  } catch(e) { toast('Error: '+e.message, 'error'); }
+}
+
+function idxOnFilePick(e) {
+  const files = [...e.target.files];
+  if (files.length) uploadFiles(files, _fmGid);
+  e.target.value = '';
+}
+
+function idxOnDrop(e) {
+  e.preventDefault();
+  document.getElementById('idx-upload-zone')?.classList.remove('over');
+  const files = [...e.dataTransfer.files];
+  if (files.length) uploadFiles(files, _fmGid);
+}
+
+// ── File / Folder creation & editing ─────────────────────────────────────────
+let _fileEditorGid = '';
+let _fileEditorPath = '';
+
+// ── Note dialog ──────────────────────────────────────────────────────────────
+// A note is a .md file in the client it is kept with: it shows in Files, is indexed like an
+// upload, and chat can use it. Cancel keeps the draft; only a save clears it.
+let _noteReturnFocus = null;
+
+function openNoteModal() {
+  const sel = document.getElementById('note-client');
+  if (!groups.length) { toast(uiT('Add a client first, then write the note.'), 'warn'); return; }
+  const keep = sel.value;
+  sel.innerHTML = groups.map(g => `<option value="${X(g.id)}">${X(g.name)}</option>`).join('');
+  const pick = (curGroup && document.getElementById('view-group')?.classList.contains('active')) ? curGroup.id : keep;
+  if (pick && groups.some(g => g.id === pick)) sel.value = pick;
+  _noteReturnFocus = document.activeElement;
+  document.getElementById('note-modal').classList.add('open');
+  const t = document.getElementById('note-title');
+  setTimeout(() => (t.value ? document.getElementById('note-text') : t).focus(), 30);
+}
+
+function closeNoteModal() {
+  const m = document.getElementById('note-modal');
+  if (!m.classList.contains('open')) return;
+  m.classList.remove('open');
+  try { _noteReturnFocus?.focus(); } catch {}
+  _noteReturnFocus = null;
+}
+
+async function saveNoteModal() {
+  const titleEl = document.getElementById('note-title');
+  const textEl  = document.getElementById('note-text');
+  const gid     = document.getElementById('note-client').value;
+  const text    = textEl.value.trim();
+  if (!text && !titleEl.value.trim()) { toast(uiT('Write something first.'), 'warn'); textEl.focus(); return; }
+  const d = new Date(), p2 = n => String(n).padStart(2, '0');
+  const stamp = `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())} ${p2(d.getHours())}.${p2(d.getMinutes())}`;
+  const title = titleEl.value.trim() || `${uiT('Note')} ${stamp}`;
+  const base  = title.replace(/\.(md|txt)$/i, '').replace(/[\/\\]+/g, ' ').trim() || uiT('Note');
+  const content = `# ${title}\n\n${textEl.value}\n`;
+  const btn = document.getElementById('note-save-btn');
+  btn.disabled = true;
+  try {
+    // The same title twice in one client gets " (2)", " (3)" and so on, never an overwrite.
+    for (let i = 1; i <= 50; i++) {
+      const name = (i === 1 ? base : `${base} (${i})`) + '.md';
+      try {
+        await api(`/api/groups/${gid}/files`, 'POST', {name, folder: '', content});
+        break;
+      } catch (e) {
+        if (!/already exists/.test(e.message) || i === 50) throw e;
+      }
+    }
+    const g = groups.find(x => x.id === gid);
+    titleEl.value = ''; textEl.value = '';
+    closeNoteModal();
+    toast(uiT('Note saved to') + ' ' + (g ? g.name : ''), 'success');
+    if (curGroup && curGroup.id === gid) {
+      _fmExpectUntil = Date.now() + 8000;
+      if (curTab === 'docs') loadFileManager(gid, false);
+    }
+  } catch (e) {
+    toast(uiT('The note was not saved.') + ' ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function openFileEditor(gid, relPath, name) {
+  _fileEditorGid  = gid;
+  _fileEditorPath = relPath;
+  document.getElementById('fe-modal-title').textContent = `Edit: ${name}`;
+  document.getElementById('fe-content').value = 'Loading…';
+  document.getElementById('fe-modal').classList.add('open');
+  try {
+    const segs = relPath.split('/').map(encodeURIComponent).join('/');
+    const d = await api(`/api/groups/${gid}/files/${segs}/content`);
+    document.getElementById('fe-content').value = d.content;
+  } catch(e) {
+    document.getElementById('fe-content').value = '';
+    toast('Error loading file: '+e.message, 'error');
+  }
+}
+
+function closeFileEditor() {
+  document.getElementById('fe-modal').classList.remove('open');
+}
+
+async function saveFileContent() {
+  const content = document.getElementById('fe-content').value;
+  try {
+    const segs = _fileEditorPath.split('/').map(encodeURIComponent).join('/');
+    await api(`/api/groups/${_fileEditorGid}/files/${segs}/content`, 'PUT', {content});
+    toast('Saved', 'success');
+    closeFileEditor();
+    const st = await api(`/api/groups/${_fileEditorGid}/index/status`);
+    if (!st.is_indexing) {
+      await api(`/api/groups/${_fileEditorGid}/index`, 'POST').catch(()=>{});
+    }
+    _fmExpectUntil = Date.now() + 8000;
+    loadFileManager(_fileEditorGid, false);
+    if (curTab === 'preview' && _currentDocName === _fileEditorPath) openReader(_fileEditorPath);
+  } catch(e) { toast('Error: '+e.message, 'error'); }
+}
+
+
+async function uploadFiles(files, gid) {
+  const msg = document.getElementById('idx-upload-msg') || document.getElementById('fm-upload-msg');
+  if (!msg) return;
+
+  // Build per-file status list
+  const ids = files.map((_, i) => `uf-${i}`);
+  msg.innerHTML = files.map((f, i) => `
+    <div id="uf-${i}" class="uf-row">
+      <span class="uf-name">${X(f.name)}</span>
+      <span class="uf-status uf-wait">${X(uiT('waiting'))}</span>
+    </div>`).join('');
+
+  let ok = 0, fail = 0;
+
+  const MAX_BYTES = 50 * 1024 * 1024;
+  for (let i = 0; i < files.length; i++) {
+    const row    = document.getElementById(ids[i]);
+    const status = row?.querySelector('.uf-status');
+    if (files[i].size > MAX_BYTES) {
+      if (status) { status.textContent = uiT('Too large (max 50 MB)'); status.className = 'uf-status uf-err'; }
+      fail++;
+      continue;
+    }
+    if (status) { status.textContent = uiT('uploading…'); status.className = 'uf-status uf-active'; }
+
+    const fd = new FormData();
+    fd.append('file', files[i]);
+    try {
+      await api(`/api/groups/${gid}/upload`, 'POST', fd);
+      if (status) { status.textContent = uiT('added'); status.className = 'uf-status uf-ok'; }
+      ok++;
+    } catch(e) {
+      if (status) { status.textContent = e.message; status.className = 'uf-status uf-err'; }
+      fail++;
+    }
+  }
+
+  // Trigger one incremental index for all uploaded files
+  if (ok > 0) {
+    try { await api(`/api/groups/${gid}/index?reset=false`, 'POST'); } catch(_) {}
+  }
+
+  _fmExpectUntil = Date.now() + 8000;
+  loadFileManager(gid, false);
+
+  if (fail === 0) toast(uiT('Added. Getting the files ready for chat.'), 'success');
+  else            toast(`${ok} ${uiT('added')}, ${fail} ${uiT('failed')}`, ok === 0 ? 'error' : 'warn');
+
+  setTimeout(() => { if (msg) msg.innerHTML = ''; }, 5000);
+}
+
+// ── HISTORY ───────────────────────────────────────────────
+// The client's chats, newest first, under Today, Yesterday, Earlier this week, then one
+// heading per date. Tapping a chat carries it on.
+async function loadHistory() {
+  if (!curGroup) return;
+  const list = document.getElementById('sessions-list');
+  if (list) list.innerHTML = skel();
+  try {
+    const d = await api(`/api/sessions?group_id=${curGroup.id}`);
+    renderSessionList(d.sessions || []);
+  } catch(e) {
+    if (list) list.innerHTML = `<div class="hist-none">${X(uiT('Could not load the chats.'))}</div>`;
+  }
+}
+
+function _histHeading(d) {
+  const day = x => new Date(x.getFullYear(), x.getMonth(), x.getDate());
+  const today = day(new Date());
+  const ago = Math.round((today - day(d)) / 86400000);
+  if (ago <= 0) return uiT('Today');
+  if (ago === 1) return uiT('Yesterday');
+  const monday = new Date(today); monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  if (day(d) >= monday) return uiT('Earlier this week');
+  return d.toLocaleDateString(UI_LANG === 'nl' ? 'nl-NL' : 'en-GB',
+    { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function renderSessionList(sessions) {
+  const el = document.getElementById('sessions-list');
+  if (!el) return;
+  if (!sessions.length) {
+    el.innerHTML = `<div class="hist-none">${X(uiT('No chats yet for this client.'))}</div>`;
+    return;
+  }
+  const when = s => new Date(s.last_active || s.started);
+  const sorted = [...sessions].sort((a, b) => when(b) - when(a));
+  const locale = UI_LANG === 'nl' ? 'nl-NL' : 'en-GB';
+  let html = '', last = '';
+  for (const s of sorted) {
+    const d = when(s), head = _histHeading(d);
+    if (head !== last) { html += `<div class="hist-day">${X(head)}</div>`; last = head; }
+    html += `
+    <div class="sess-item">
+      <button type="button" class="sess-open" onclick="resumeSession('${s.id}')">
+        <span class="sess-q">${X(s.first_question || uiT('(empty chat)'))}</span>
+        <span class="sess-dt">${d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}</span>
+      </button>
+      <button type="button" class="btn btn-ghost btn-icon sess-del" onclick="confirmDeleteSession('${s.id}')" title="${X(uiT('Delete'))}" aria-label="${X(uiT('Delete'))}">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>`;
+  }
+  el.innerHTML = html;
+}
+
+// ── DOCUMENTS FOR THIS CHAT ───────────────────────────────
+// The documents a chat may use. null means all of them (the default); a new chat, a
+// resumed chat or another client goes back to all. The chat island reads it on send.
+let _chatSources = null;
+let _docPickTotal = 0;
+let _docPickReturn = null;
+window.chatSources = () => (_chatSources ? [..._chatSources] : null);
+window.resetChatSources = () => { _chatSources = null; _docsBtnLabel(); };
+function _docsBtnLabel() {
+  const b = document.getElementById('chat-docs-btn');
+  if (!b) return;
+  b.textContent = !_chatSources ? uiT('Documents: All')
+    : _docPickTotal ? `${uiT('Documents')}: ${_chatSources.length} ${uiT('of')} ${_docPickTotal}`
+    : `${uiT('Documents')}: ${_chatSources.length}`;
+}
+// "Ask about this" in the reader: the chat answers from that document only, until the
+// Documents button, a new chat or another client widens it again.
+function askAboutDoc() {
+  if (curGroup && _currentDocName) { _chatSources = [_currentDocName]; _docsBtnLabel(); }
+  switchTab('chat');
+}
+async function openDocPicker() {
+  if (!curGroup) return;
+  const list = document.getElementById('docpick-list');
+  _docPickReturn = document.activeElement;
+  list.innerHTML = skel();
+  document.getElementById('docpick-modal').classList.add('open');
+  let files = [];
+  try { files = ((await api(`/api/groups/${curGroup.id}/files/tree`)).files || []).filter(f => f.indexed); }
+  catch(e) { list.innerHTML = `<div class="hist-none">${X(uiT('Could not load the documents.'))}</div>`; return; }
+  _docPickTotal = files.length;
+  if (!files.length) {
+    list.innerHTML = `<div class="hist-none">${X(uiT('No documents are ready yet.'))}</div>`;
+    return;
+  }
+  const on = _chatSources ? new Set(_chatSources) : null;
+  list.innerHTML = files.map(f => `
+    <label class="docpick-row">
+      <input type="checkbox" value="${X(f.rel_path)}"${!on || on.has(f.rel_path) ? ' checked' : ''}>
+      <span class="docpick-name">${X(f.name)}</span>
+      <span class="ext-tag">${X((f.ext || '').replace('.', ''))}</span>
+    </label>`).join('');
+  list.querySelector('input')?.focus();
+}
+function docPickAll(on) {
+  document.querySelectorAll('#docpick-list input').forEach(b => { b.checked = on; });
+}
+function closeDocPicker() {
+  const m = document.getElementById('docpick-modal');
+  if (!m?.classList.contains('open')) return;
+  m.classList.remove('open');
+  const back = _docPickReturn; _docPickReturn = null;
+  if (back && typeof back.focus === 'function' && document.contains(back)) back.focus();
+}
+function applyDocPicker() {
+  const boxes = [...document.querySelectorAll('#docpick-list input')];
+  if (!boxes.length) { closeDocPicker(); return; }
+  const on = boxes.filter(b => b.checked).map(b => b.value);
+  if (!on.length) { toast(uiT('Tick at least one document.'), 'warn'); return; }
+  _chatSources = on.length === boxes.length ? null : on;
+  _docsBtnLabel();
+  closeDocPicker();
+}
+
+async function resumeSession(id) {
+  if (window.RagChat?.resumeSession) {
+    let s;
+    try { s = await api(`/api/sessions/${id}`); }
+    catch(e) { toast('Could not load session', 'error'); return; }
+
+    const sessionGroupId = s.group_id || 'default';
+    if (curGroup?.id !== sessionGroupId) {
+      const g = groups.find(x => x.id === sessionGroupId);
+      if (g) {
+        curGroup = g;
+        store.set('rag_group', sessionGroupId);
+        showView('view-group');
+        updateGroupHeader();
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`sb-grp-${sessionGroupId}`)?.classList.add('active');
+      }
+    }
+    switchTab('chat');
+    notifyRagStateChange();
+    await window.RagChat.resumeSession(id);
+    return;
+  }
+
+  toast('Chat is not loaded — reload the page and try again', 'error');
+}
+
+async function confirmDeleteSession(id) {
+  try { await showConfirm(uiT('Delete chat'), uiT('Delete this chat?')); }
+  catch { return; }
+  try {
+    await softDelete('Session deleted', async () => {
+      await api(`/api/sessions/${id}`, 'DELETE');
+      loadHistory();
+    });
+  } catch { /* undone */ }
+}
+
+// ── GROUP MODAL ───────────────────────────────────────────
+let gmType = 'knowledge';
+
+function openCreateModal() {
+  editGroupId = null;
+  gmColor = COLORS[0]; gmEmoji = EMOJIS[0]; gmLang = DEFAULT_LANG; gmType = 'knowledge';
+  document.getElementById('modal-title-text').textContent = uiT('New client');
+  document.getElementById('gm-submit').textContent = uiT('Create client');
+  document.getElementById('gm-name').value = '';
+  document.getElementById('gm-desc').value = '';
+  buildColorPicker(); buildEmojiPicker(); buildLangPicker();
+  document.getElementById('group-modal').classList.add('open');
+  setTimeout(() => document.getElementById('gm-name').focus(), 80);
+}
+
+function openEditModal(id) {
+  const g = id ? groups.find(x => x.id === id) : curGroup;
+  if (!g) return;
+  editGroupId = g.id;
+  gmColor = COLORS.includes(g.color) ? g.color : (_LEGACY_GROUP_COLOR[String(g.color || '').toLowerCase()] || COLORS[0]); gmEmoji = g.emoji; gmLang = g.language || DEFAULT_LANG; gmType = 'knowledge';
+  document.getElementById('modal-title-text').textContent = uiT('Edit client');
+  document.getElementById('gm-submit').textContent = uiT('Save');
+  document.getElementById('gm-name').value = g.name;
+  document.getElementById('gm-desc').value = g.description || '';
+  buildColorPicker(); buildEmojiPicker(); buildLangPicker();
+  document.getElementById('group-modal').classList.add('open');
+  setTimeout(() => document.getElementById('gm-name').focus(), 80);
+}
+
+function closeGroupModal() {
+  document.getElementById('group-modal').classList.remove('open');
+}
+
+function buildColorPicker() {
+  document.getElementById('gm-colors').innerHTML = COLORS.map(c=>`
+    <button type="button" class="c-swatch ${c===gmColor?'selected':''}" style="background:${grpColor(c)}"
+      aria-label="Colour ${c.slice(4)}" aria-pressed="${c===gmColor}"
+      onclick="gmColor='${c}';buildColorPicker()"></button>`).join('');
+}
+
+function buildEmojiPicker() {
+  document.getElementById('gm-emojis').innerHTML = EMOJIS.map(e=>`
+    <button type="button" class="e-btn ${e===gmEmoji?'selected':''}" onclick="gmEmoji='${e}';buildEmojiPicker()">${e}</button>`
+  ).join('');
+}
+
+function buildLangPicker() {
+  const sel = document.getElementById('gm-language');
+  if (!sel) return;
+  sel.innerHTML = Object.entries(LANGUAGES).map(([code, name]) =>
+    `<option value="${code}"${code === gmLang ? ' selected' : ''}>${name}</option>`
+  ).join('');
+  sel.onchange = () => { gmLang = sel.value; };
+}
+
+async function submitGroup() {
+  const name = document.getElementById('gm-name').value.trim();
+  if (!name) { toast('Group name is required', 'error'); return; }
+  const body = {
+    name,
+    description: document.getElementById('gm-desc').value,
+    color: gmColor,
+    emoji: gmEmoji,
+    language: gmLang,
+    group_type: 'knowledge',
+  };
+  try {
+    const url = editGroupId ? `/api/groups/${editGroupId}` : '/api/groups';
+    const m   = editGroupId ? 'PUT' : 'POST';
+    await api(url, m, body);
+    closeGroupModal();
+    await loadGroups();
+    if (editGroupId && curGroup?.id === editGroupId) {
+      curGroup = groups.find(g => g.id === editGroupId) || curGroup;
+      updateGroupHeader();
+    }
+    toast(editGroupId ? 'Group updated' : `Created "${name}"`, 'success');
+  } catch(e) { toast('Error: '+e.message, 'error'); }
+}
+
+async function confirmDelete() {
+  if (!curGroup) return;
+  await deleteGroupById(curGroup.id);
+}
+
+async function deleteGroupById(id) {
+  const g = groups.find(x => x.id === id);
+  if (!g) return;
+  try {
+    await showConfirm(uiT('Delete client'), `"${g.name}": ${uiT('this client and all its files and chats are deleted for good.')}`, { okLabel: uiT('Delete') });
+  } catch { return; }
+  try {
+    await api(`/api/groups/${id}`, 'DELETE');
+    toast(`${uiT('Deleted')}: ${g.name}`, 'success');
+    if (curGroup?.id === id) { curGroup = null; showHome(); }
+    await loadGroups();
+    if (!curGroup) renderDashboard();
+  } catch(e) { toast('Error: '+e.message, 'error'); }
+}
+
+// ── SETTINGS ──────────────────────────────────────────────
+// ── PROFILE ──────────────────────────────────────────────
+let _profileAvatarDataUrl = '';
+
+async function loadProfile() {
+  try {
+    const p = await api('/api/profile');
+    document.getElementById('profile-display-name').value = p.display_name || '';
+    document.getElementById('profile-bio').value = p.bio || '';
+    _profileAvatarDataUrl = p.avatar_data_url || '';
+    _renderProfileAvatar();
+    // Update sidebar user label if display_name set
+    if (p.display_name) {
+      const lbl = document.getElementById('user-name-lbl');
+      if (lbl) lbl.textContent = p.display_name + (authUser?.role === 'admin' ? ' (admin)' : '');
+    }
+  } catch(e) { /* profile load is best-effort */ }
+}
+
+function _renderProfileAvatar() {
+  const img = document.getElementById('profile-avatar-img');
+  const initial = document.getElementById('profile-avatar-initial');
+  if (_profileAvatarDataUrl && img) {
+    img.src = _profileAvatarDataUrl;
+    img.style.display = 'block';
+    if (initial) initial.style.display = 'none';
+    // Sync sidebar avatar
+    const av = document.getElementById('user-avatar');
+    if (av) { av.innerHTML = `<img src="${X(_profileAvatarDataUrl)}" style="width:22px;height:22px;border-radius:50%;object-fit:cover" alt="">`; }
+  } else {
+    if (img) { img.style.display = 'none'; img.src = ''; }
+    if (initial) initial.style.display = '';
+    const av = document.getElementById('user-avatar');
+    if (av) { av.textContent = (authUser?.username || '?')[0].toUpperCase(); }
+  }
+}
+
+function profileAvatarPicked(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { toast('Image too large (max 2 MB)', 'error'); return; }
+  const reader = new FileReader();
+  reader.onload = e => { _profileAvatarDataUrl = e.target.result; _renderProfileAvatar(); };
+  reader.readAsDataURL(file);
+}
+
+function profileClearAvatar() {
+  _profileAvatarDataUrl = '';
+  const input = document.getElementById('profile-avatar-input');
+  if (input) input.value = '';
+  _renderProfileAvatar();
+}
+
+async function saveProfile() {
+  const display_name = document.getElementById('profile-display-name').value.trim();
+  const bio = document.getElementById('profile-bio').value.trim();
+  try {
+    const p = await api('/api/profile', 'POST', { display_name, bio, avatar_data_url: _profileAvatarDataUrl });
+    _profileAvatarDataUrl = p.avatar_data_url || '';
+    _renderProfileAvatar();
+    const lbl = document.getElementById('user-name-lbl');
+    if (lbl) lbl.textContent = (p.display_name || authUser?.username || '') + (authUser?.role === 'admin' ? ' (admin)' : '');
+    toast('Profile saved!', 'success');
+  } catch(e) { toast('Failed to save profile: ' + e.message, 'error'); }
+}
+
+function loadSettingsUI() {
+  const sal = document.getElementById('s-app-language');
+  if (sal) sal.value = cfg.app_language || DEFAULT_LANG || 'en';
+  const th = document.getElementById('s-theme');
+  if (th) th.value = currentTheme();
+  const ds = document.getElementById('s-density');
+  if (ds) ds.value = store.get('rag_density') || 'comfortable';
+}
+
+async function saveSettings() {
+  const body = { app_language: document.getElementById('s-app-language')?.value || 'en' };
+  try {
+    cfg = await api('/api/settings', 'POST', body);
+    // Flip the whole UI live to the new language, and let React re-read it.
+    applyTranslations(cfg.app_language || DEFAULT_LANG);
+    notifyRagStateChange();
+    const ok = document.getElementById('s-saved');
+    ok.style.display='inline'; setTimeout(()=>ok.style.display='none', 2000);
+    toast(uiT('Settings saved'), 'success');
+  } catch(e) { toast(uiT('Save failed'), 'error'); }
+}
+
+// ── SOURCE MODAL ──────────────────────────────────────────
+// ref = {sources, session, turn}: a saved answer's citation opens the passage kept with it
+// (GET /api/sessions/{id}/turns/{n}/passages/{k}), word for word, and says whether the
+// file still reads that way. Without a ref, or if that fails, the short preview shows.
+let _srcList = [];
+function showSrc(i, ref = {}) {
+  _srcList = ref.sources || window.lastSources || lastSources;
+  const s = _srcList[i]; if (!s) return;
+  window._activeSourceIndex = i;
+  document.getElementById('src-modal-title').textContent = `${s.source} · p.${s.page} · ${(s.score*100).toFixed(1)}% match`;
+  document.getElementById('src-text').textContent = s.text || '';
+  const state = document.getElementById('src-state');
+  state.hidden = true; state.textContent = '';
+  const btn = document.getElementById('src-open-preview');
+  if (btn) btn.style.display = s.type === 'wiki' ? 'none' : '';
+  document.getElementById('src-modal').classList.add('open');
+  if (!ref.session || ref.turn == null) return;
+  const asked = `${ref.session}/${ref.turn}/${i}`;
+  showSrc._asked = asked;
+  api(`/api/sessions/${encodeURIComponent(ref.session)}/turns/${ref.turn}/passages/${i}`).then(p => {
+    if (showSrc._asked !== asked) return;  // another citation was opened meanwhile
+    if (p.text) document.getElementById('src-text').textContent = p.text;
+    const label = {kept: uiT('Unchanged since this answer.'), same: p.note, changed: uiT('Changed since this answer.') + ' ' + p.note,
+                   gone: p.note, wiki: p.note, old: p.note}[p.state] || '';
+    state.textContent = (label || '') + (p.trimmed ? ' ' + uiT('Only the start of this passage was kept.') : '');
+    state.className = 'src-state ' + (p.state === 'kept' || p.state === 'same' ? 'ok' : 'warn');
+    state.hidden = !state.textContent.trim();
+  }).catch(() => {});
+}
+function closeSrcModal() {
+  document.getElementById('src-modal').classList.remove('open');
+}
+
+async function openCurrentSourcePreview() {
+  const s = _srcList[window._activeSourceIndex];
+  if (!s || !curGroup || s.type === 'wiki') return;
+  closeSrcModal();
+  try {
+    const d = await api(`/api/groups/${curGroup.id}/documents`);
+    const docs = d.documents || [];
+    const source = String(s.source || '');
+    const base = source.split('/').pop();
+    const idx = docs.findIndex(doc => (doc.rel_path || doc.name) === source || doc.name === source || doc.name === base);
+    if (idx < 0) {
+      toast('Source document is not in the preview list', 'warn');
+      return;
+    }
+    if (_splitMode) {
+      renderPreviewList(curGroup.id, docs);
+      await previewDoc(curGroup.id, docs[idx].rel_path || docs[idx].name, idx, s.page);
+    } else {
+      openReader(docs[idx].rel_path || docs[idx].name, s.page);
+    }
+  } catch(e) {
+    toast('Could not open source: ' + e.message, 'error');
+  }
+}
+
+// ── CONFIRM DIALOG ────────────────────────────────────────
+// The app's one dialog: never the browser's confirm, prompt or alert. Cancel left,
+// the action right, Escape cancels, and focus goes back where it was. A step that
+// cannot be undone keeps the danger button (the default); pass {danger:false} for
+// one that can. Rejects with Error('cancelled') on cancel.
+let _confirmReturnFocus = null;
+function showConfirm(title, msg, opts = {}) {
+  return new Promise((resolve, reject) => {
+    const danger = opts.danger !== false;
+    const ok  = document.getElementById('confirm-ok');
+    const inp = document.getElementById('confirm-input');
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-msg').textContent   = msg;
+    ok.textContent = opts.okLabel || (danger ? 'Delete' : 'Confirm');
+    ok.className   = danger ? 'btn btn-danger' : 'btn btn-primary';
+    const asking = opts.input !== undefined;
+    inp.style.display = asking ? '' : 'none';
+    inp.value = asking ? String(opts.input ?? '') : '';
+    pendingConfirm = { resolve, reject, asking };
+    _confirmReturnFocus = document.activeElement;
+    document.getElementById('confirm-bg').classList.add('open');
+    // A destructive step starts on Cancel, so Enter alone never destroys anything.
+    (asking ? inp : (danger ? document.getElementById('confirm-cancel') : ok)).focus();
+    if (asking) inp.select();
+  });
+}
+// The same dialog with a text field: resolves with the trimmed text, rejects on cancel.
+function _closeConfirm() {
+  document.getElementById('confirm-bg').classList.remove('open');
+  const back = _confirmReturnFocus; _confirmReturnFocus = null;
+  if (back && typeof back.focus === 'function' && document.contains(back)) back.focus();
+}
+function doConfirm() {
+  const p = pendingConfirm; pendingConfirm = null;
+  const val = document.getElementById('confirm-input').value.trim();
+  _closeConfirm();
+  if (p) p.resolve(p.asking ? val : undefined);
+}
+function cancelConfirm() {
+  if (!pendingConfirm) return;
+  const p = pendingConfirm; pendingConfirm = null;
+  _closeConfirm();
+  p.reject(new Error('cancelled'));
+}
+
+// close overlays on background click
+document.addEventListener('click', e => {
+  ['group-modal','src-modal','confirm-bg','docpick-modal','note-modal'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && e.target === el) {
+      if (id === 'confirm-bg') cancelConfirm();
+      else if (id === 'docpick-modal') closeDocPicker();
+      else if (id === 'note-modal') closeNoteModal();
+      else el.classList.remove('open');
+    }
+  });
+});
+
+// ── TOAST ─────────────────────────────────────────────────
+// toast() moved to /static/js/ui_util.js (loaded before this script).
+
+// ── SOFT DELETE WITH UNDO ─────────────────────────────────
+// Delays the destructive action for `delayMs`, shows toast with Undo.
+// Returns a promise that resolves when the action actually runs (or rejects if undone).
+function softDelete(label, applyFn, delayMs = 5000) {
+  return new Promise((resolve, reject) => {
+    let undone = false;
+    const timer = setTimeout(async () => {
+      if (undone) return;
+      try { await applyFn(); resolve(); }
+      catch (e) { toast('Delete failed: ' + e.message, 'error'); reject(e); }
+    }, delayMs);
+    toast(label, 'info', {
+      duration: delayMs,
+      action: { label: 'Undo', fn: () => { undone = true; clearTimeout(timer); toast('Cancelled', 'success'); reject(new Error('undone')); } },
+    });
+  });
+}
+
+// ── API HELPER ────────────────────────────────────────────
+async function api(url, method='GET', body=null, headers={}) {
+  const opts = { method, headers: {...headers}, credentials: 'include' };
+  // Attach auth token (Bearer header kept for WS and non-cookie paths)
+  if (authToken) opts.headers['Authorization'] = `Bearer ${authToken}`;
+  if (body instanceof FormData) {
+    opts.body = body;
+  } else if (body !== null && body !== undefined) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
+  const r = await fetch(url, opts);
+  if (r.status === 401) {
+    authToken = '';
+    store.del('rag_token');
+    // Clear the httpOnly cookie via the logout endpoint
+    try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); } catch(_) {}
+    const screen = document.getElementById('auth-screen');
+    if (screen) screen.style.display = 'flex';
+    setTimeout(() => document.getElementById('auth-user')?.focus(), 50);
+    throw new Error('Session expired');
+  }
+  if (!r.ok) {
+    let msg = `HTTP ${r.status}`;
+    try { const j = await r.json(); msg = j.detail || msg; } catch(e){}
+    throw new Error(msg);
+  }
+  return r.json();
+}
+
+// ── HELPERS ───────────────────────────────────────────────
+// X() / fmtN() / fmtBytes() moved to /static/js/ui_util.js (loaded first).
+
+// ── MOBILE SIDEBAR ────────────────────────────────────────
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const hb = document.getElementById('hamburger');
+  const ov = document.getElementById('sb-overlay');
+  const open = sb.classList.toggle('open');
+  hb.classList.toggle('open', open);
+  ov.classList.toggle('open', open);
+}
+function closeSidebar() {
+  document.getElementById('sidebar')?.classList.remove('open');
+  document.getElementById('hamburger')?.classList.remove('open');
+  document.getElementById('sb-overlay')?.classList.remove('open');
+}
+
+// ── PDF.JS VIEWER ─────────────────────────────────────────
+let _pdfDoc = null, _pdfPage = 1, _pdfZoom = 1.0;
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/static/vendor/pdf.worker.min.js?v=3.11.174-local';
+
+async function loadPdfViewer(apiUrl, page) {
+  _pdfDoc = null; _pdfPage = 1; _pdfZoom = 1.0;
+  const _eb = document.getElementById('pdf-err-box'); if (_eb) _eb.remove();
+  const pageInput = document.getElementById('pdf-page-input');
+  const totalEl = document.getElementById('pdf-total-pages');
+  if (pageInput) { pageInput.value = 1; pageInput.disabled = true; }
+  if (totalEl) totalEl.textContent = '…';
+  document.getElementById('pdf-prev').disabled = true;
+  document.getElementById('pdf-next').disabled = true;
+  try {
+    // Fetch with auth header, then pass bytes directly so the worker does not need
+    // to re-fetch a blob URL.
+    const tok = store.get('rag_token');
+    const resp = await fetch(apiUrl, { headers: tok ? { Authorization: `Bearer ${tok}` } : {} });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = new Uint8Array(await resp.arrayBuffer());
+    _pdfDoc = await pdfjsLib.getDocument({ data }).promise;
+    if (totalEl) totalEl.textContent = _pdfDoc.numPages;
+    if (pageInput) { pageInput.max = _pdfDoc.numPages; pageInput.disabled = false; }
+    // Jump to the cited page when opened from a source chip (clamped to range).
+    _pdfPage = Math.min(Math.max(1, parseInt(page) || 1), _pdfDoc.numPages);
+    if (pageInput) pageInput.value = _pdfPage;
+    await renderPdfPage(_pdfPage);
+  } catch(e) {
+    if (totalEl) totalEl.textContent = '?';
+    console.error('PDF load error:', e);
+    const wrap = document.getElementById('pdf-canvas-wrap');
+    if (wrap) {
+      let errBox = document.getElementById('pdf-err-box');
+      if (!errBox) {
+        errBox = document.createElement('div');
+        errBox.id = 'pdf-err-box';
+        errBox.style.cssText = 'padding:24px;color:var(--red);font-size:var(--fs-xs);font-family:var(--mono);white-space:pre-wrap;line-height:1.5';
+        wrap.appendChild(errBox);
+      }
+      errBox.textContent =
+        `PDF-fout: ${e && e.name || 'Error'}\n` +
+        `${e && e.message || String(e)}\n` +
+        `worker: ${pdfjsLib.GlobalWorkerOptions.workerSrc}\n` +
+        `lib: ${pdfjsLib.version || '?'}`;
+    }
+  }
+}
+
+// A book: two pages side by side (1 and 2, then 3 and 4) when the reader is wide enough,
+// both scaled to fit its height; one page fitted to the width on a phone or narrow window.
+const _PDF_SPREAD_MIN = 900;
+let _pdfTasks = [];
+function _pdfSpread() {
+  const wrap = document.getElementById('pdf-canvas-wrap');
+  return !!_pdfDoc && _pdfDoc.numPages > 1 && !!wrap && wrap.clientWidth >= _PDF_SPREAD_MIN;
+}
+function _pdfStep() { return _pdfSpread() ? 2 : 1; }
+
+async function renderPdfPage(n) {
+  if (!_pdfDoc) return;
+  const spread = _pdfSpread();
+  if (spread && n % 2 === 0) n -= 1;          // the left page of a spread is odd
+  const wrap = document.getElementById('pdf-canvas-wrap');
+  const canvases = [document.getElementById('pdf-canvas'), document.getElementById('pdf-canvas-2')];
+  _pdfTasks.forEach(t => t.cancel());
+  _pdfTasks = [];
+
+  const pages = [await _pdfDoc.getPage(n)];
+  if (spread && n < _pdfDoc.numPages) pages.push(await _pdfDoc.getPage(n + 1));
+
+  const v0 = pages[0].getViewport({ scale: 1 });
+  const padW = 32, gap = 16;
+  const baseScale = spread
+    ? Math.min((wrap.clientHeight - padW) / v0.height, (wrap.clientWidth - padW - gap) / (2 * v0.width))
+    : (wrap.clientWidth - padW) / v0.width;
+  const scale = baseScale * _pdfZoom;
+  const dpr = window.devicePixelRatio || 1;
+
+  canvases[1].hidden = pages.length < 2;
+  wrap.classList.toggle('is-spread', pages.length > 1);
+  try {
+    await Promise.all(pages.map((pg, i) => {
+      const c = canvases[i];
+      const vp = pg.getViewport({ scale });
+      c.width  = Math.floor(vp.width * dpr);
+      c.height = Math.floor(vp.height * dpr);
+      c.style.width  = vp.width + 'px';
+      c.style.height = vp.height + 'px';
+      const task = pg.render({ canvasContext: c.getContext('2d'), viewport: vp,
+        transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null });
+      _pdfTasks.push(task);
+      return task.promise;
+    }));
+  } catch(e) {
+    if (e && e.name === 'RenderingCancelledException') return;   // a newer turn took over
+    throw e;
+  }
+
+  _pdfPage = n;
+  const last = n + pages.length - 1;
+  const pageInput = document.getElementById('pdf-page-input');
+  if (pageInput) pageInput.value = n;
+  document.getElementById('pdf-zoom-info').textContent = Math.round(_pdfZoom * 100) + '%';
+  document.getElementById('pdf-prev').disabled = n <= 1;
+  document.getElementById('pdf-next').disabled = last >= _pdfDoc.numPages;
+  wrap.scrollTop = 0;
+  wrap.scrollLeft = 0;
+}
+
+function pdfPrevPage() { if (_pdfPage > 1) renderPdfPage(Math.max(1, _pdfPage - _pdfStep())); }
+function pdfNextPage() {
+  if (_pdfDoc && _pdfPage + _pdfStep() <= _pdfDoc.numPages) renderPdfPage(_pdfPage + _pdfStep());
+}
+function pdfGoToPage(val) {
+  if (!_pdfDoc) return;
+  const n = Math.max(1, Math.min(parseInt(val) || 1, _pdfDoc.numPages));
+  const input = document.getElementById('pdf-page-input');
+  if (input) input.value = n;
+  if (n !== _pdfPage) renderPdfPage(n);
+}
+
+function _readerOpen() {
+  const pdf = document.getElementById('pdf-viewer-wrap');
+  return !!_pdfDoc && pdf && pdf.style.display !== 'none' && pdf.offsetParent !== null;
+}
+
+// The arrow keys and a sideways swipe turn the page; a resize lays the spread out again.
+(() => {
+  document.addEventListener('keydown', e => {
+    if (!_readerOpen() || document.querySelector('.modal-bg.open')) return;
+    const tag = (e.target && e.target.tagName) || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target?.isContentEditable) return;
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp')    { e.preventDefault(); pdfPrevPage(); }
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); pdfNextPage(); }
+  });
+  let x0 = null, y0 = 0;
+  document.addEventListener('touchstart', e => {
+    const wrap = document.getElementById('pdf-canvas-wrap');
+    x0 = (e.touches.length === 1 && _pdfZoom <= 1 && wrap?.contains(e.target)) ? e.touches[0].clientX : null;
+    if (x0 !== null) y0 = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchend', e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+    x0 = null;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < 1.5 * Math.abs(dy)) return;
+    if (dx < 0) pdfNextPage(); else pdfPrevPage();
+  }, { passive: true });
+  let t = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(t);
+    t = setTimeout(() => { if (_readerOpen()) renderPdfPage(_pdfPage); }, 200);
+  });
+})();
+
+function pdfZoom(delta) {
+  _pdfZoom = Math.max(0.5, Math.min(4.0, _pdfZoom + delta));
+  renderPdfPage(_pdfPage);
+}
+function pdfZoomFit() {
+  _pdfZoom = 1.0;
+  renderPdfPage(_pdfPage);
+}
+
+function togglePrevSidebar() {
+  const sb  = document.querySelector('.prev-sidebar');
+  const btn = document.getElementById('prev-sidebar-toggle');
+  if (!sb) return;
+  const collapsed = sb.classList.toggle('collapsed');
+  if (btn) btn.style.color = collapsed ? 'var(--accent)' : 'var(--text2)';
+  // Re-render PDF after transition so canvas uses new width
+  if (_pdfDoc) setTimeout(() => renderPdfPage(_pdfPage), 220);
+}
+
+// ── PREVIEW ───────────────────────────────────────────────
+let prevActiveIdx = -1;
+
+async function loadPreview(groupId) {
+  const list = document.getElementById('prev-doc-list');
+  if (!list) return;
+  list.innerHTML = skel();
+  try {
+    const d = await api(`/api/groups/${groupId}/documents`);
+    renderPreviewList(groupId, d.documents || []);
+  } catch(e) {
+    list.innerHTML = `<div style="padding:20px;color:var(--red);font-size:var(--fs-xs)">Error: ${X(e.message)}</div>`;
+  }
+}
+
+function renderPreviewList(gid, docs) {
+  const list = document.getElementById('prev-doc-list');
+  if (!list) return;
+  if (!docs.length) {
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:var(--fs-xs)">No documents for this client yet.</div>';
+    return;
+  }
+  list.innerHTML = docs.map((d, i) => `
+    <div class="prev-doc-item${prevActiveIdx===i?' active':''}" id="prev-item-${i}" onclick='previewDoc(${JSON.stringify(gid)},${JSON.stringify(d.rel_path || d.name)},${i})'>
+      <div class="prev-doc-name">${X(d.name)}</div>
+      <div class="prev-doc-meta">${fmtBytes(d.size)} &nbsp;·&nbsp; ${X((d.rel_path || d.name).split('.').pop().toUpperCase())}${d.folder ? ` &nbsp;·&nbsp; ${X(d.folder)}` : ''}</div>
+    </div>`).join('');
+  if (prevActiveIdx === -1 && docs.length) previewDoc(gid, docs[0].rel_path || docs[0].name, 0);
+}
+
+let _currentDocName = null;
+let _docSummaryVisible = false;
+
+function docPathUrl(path) {
+  return String(path).split('/').map(encodeURIComponent).join('/');
+}
+
+async function previewDoc(gid, relPath, idx, page) {
+  document.querySelectorAll('.prev-doc-item').forEach((el, i) => el.classList.toggle('active', i === idx));
+  prevActiveIdx = idx;
+  _currentDocName = relPath;
+  const name = String(relPath).split('/').pop();
+
+  const toolbar = document.getElementById('prev-toolbar');
+  const empty   = document.getElementById('prev-empty');
+  const frame   = document.getElementById('prev-frame');
+  const wrap    = document.getElementById('prev-text-wrap');
+  const textEl  = document.getElementById('prev-text');
+  const nameEl  = document.getElementById('prev-doc-name');
+  const sumPnl  = document.getElementById('doc-summary-panel');
+
+  const pdfWrap = document.getElementById('pdf-viewer-wrap');
+
+  if (toolbar) toolbar.style.display = '';
+  if (empty)   empty.style.display   = 'none';
+  if (frame)   frame.style.display   = 'none';
+  if (wrap)    wrap.style.display    = 'none';
+  if (pdfWrap) pdfWrap.style.display = 'none';
+  if (sumPnl)  sumPnl.style.display  = 'none';
+  _docSummaryVisible = false;
+  if (nameEl)  nameEl.textContent    = name;
+
+  const ext = name.split('.').pop().toLowerCase();
+  const editBtn = document.getElementById('prev-edit-btn');
+  if (editBtn) editBtn.style.display = ['md', 'txt'].includes(ext) ? '' : 'none';
+  const docUrlPath = docPathUrl(relPath);
+  const fileUrl    = `/api/groups/${encodeURIComponent(gid)}/documents/${docUrlPath}/file`;
+  const previewUrl = `/api/groups/${encodeURIComponent(gid)}/documents/${docUrlPath}/preview`;
+
+  if (ext === 'pdf') {
+    if (pdfWrap) pdfWrap.style.display = '';
+    // On mobile, auto-collapse sidebar so PDF gets full screen
+    const sb = document.querySelector('.prev-sidebar');
+    const btn = document.getElementById('prev-sidebar-toggle');
+    if (sb && window.innerWidth <= 768 && !sb.classList.contains('collapsed')) {
+      sb.classList.add('collapsed');
+      if (btn) btn.style.color = 'var(--accent)';
+    }
+    loadPdfViewer(fileUrl, page);
+    return;
+  }
+
+  // Helper: render a single notebook output element
+  function renderNbOutput(output) {
+    if (output.output_type === 'stream') {
+      const content = Array.isArray(output.text) ? output.text.join('') : (output.text || '');
+      const cls = output.name === 'stderr' ? 'nb-stderr' : 'nb-stdout';
+      return `<div class="${cls}"><pre>${X(content)}</pre></div>`;
+    }
+    if (output.output_type === 'error') {
+      const tb = (output.traceback || []).map(l => l.replace(/\x1b\[[0-9;]*m/g, '')).join('\n');
+      return `<div class="nb-error"><pre>${X(output.ename + ': ' + output.evalue)}${tb ? '\n' + X(tb) : ''}</pre></div>`;
+    }
+    if (output.output_type === 'execute_result' || output.output_type === 'display_data') {
+      const data = output.data || {};
+      if (data['text/html']) {
+        const html = Array.isArray(data['text/html']) ? data['text/html'].join('') : data['text/html'];
+        return `<div class="nb-output-html">${sanitizeHtml(html)}</div>`;
+      }
+      if (data['image/png']) {
+        const src = Array.isArray(data['image/png']) ? data['image/png'].join('') : data['image/png'];
+        return `<div class="nb-output-img"><img src="data:image/png;base64,${X(src)}" style="max-width:100%"></div>`;
+      }
+      if (data['image/svg+xml']) {
+        const svg = Array.isArray(data['image/svg+xml']) ? data['image/svg+xml'].join('') : data['image/svg+xml'];
+        return `<div class="nb-output-img">${sanitizeHtml(svg)}</div>`;
+      }
+      if (data['text/plain']) {
+        const txt = Array.isArray(data['text/plain']) ? data['text/plain'].join('') : data['text/plain'];
+        return `<div class="nb-stdout"><pre>${X(txt)}</pre></div>`;
+      }
+    }
+    return '';
+  }
+
+  const _snapToken = authToken;
+  const _authFetch = (url) => fetch(url, { headers: _snapToken ? { Authorization: `Bearer ${_snapToken}` } : {} });
+
+  try {
+    if (ext === 'docx') {
+      // Fetch backend-extracted text (raw binary can't be rendered in browser)
+      const r = await _authFetch(previewUrl);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data = await r.json();
+      if (textEl) {
+        textEl.innerHTML = (data.pages || []).map(p =>
+          `<div class="nb-docx-page">${X(p.text)}</div>`
+        ).join('<hr style="border-color:var(--border);margin:12px 0">');
+      }
+    } else if (ext === 'ipynb') {
+      const r = await _authFetch(fileUrl);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const text = await r.text();
+      const nb   = JSON.parse(text);
+      const lang = nb.metadata?.kernelspec?.language || 'python';
+
+      if (textEl) {
+        textEl.innerHTML = (nb.cells || []).map(c => {
+          const src = Array.isArray(c.source) ? c.source.join('') : (c.source || '');
+          if (c.cell_type === 'code') {
+            const execCount = c.execution_count != null ? c.execution_count : ' ';
+            const outputs   = (c.outputs || []).map(renderNbOutput).join('');
+            return `<div class="nb-cell nb-code-cell">
+              <div class="nb-cell-in">
+                <span class="nb-exec-count">In [${execCount}]:</span>
+                <pre class="nb-code"><code class="language-${lang}">${X(src)}</code></pre>
+              </div>
+              ${outputs ? `<div class="nb-cell-out">${outputs}</div>` : ''}
+            </div>`;
+          } else if (c.cell_type === 'markdown') {
+            return `<div class="nb-cell nb-md-cell"><div class="md">${renderMarkdown(src)}</div></div>`;
+          } else {
+            return src ? `<div class="nb-cell nb-raw-cell"><pre>${X(src)}</pre></div>` : '';
+          }
+        }).join('');
+        highlightIn(textEl);
+      }
+    } else if (ext === 'md') {
+      const r = await _authFetch(fileUrl);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const text = await r.text();
+      if (textEl) {
+        // A front-matter block (--- key: value ---) is the file's details, not a heading.
+        const fm = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/.exec(text);
+        const head = fm ? `<pre class="md-front">${X(fm[1])}</pre>` : '';
+        textEl.innerHTML = `${head}<div class="md">${renderMarkdown(fm ? text.slice(fm[0].length) : text)}</div>`;
+        highlightIn(textEl);
+      }
+    } else {
+      // txt and other plain-text types
+      const r = await _authFetch(fileUrl);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const text = await r.text();
+      if (textEl) {
+        const hasMath = /\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|(^|[^\\])\$[^\n$]+?\$|\\\([^\n]+?\\\)/.test(text);
+        textEl.innerHTML = hasMath
+          ? `<div class="md">${renderMarkdown(text)}</div>`
+          : `<pre style="font-family:inherit;white-space:pre-wrap;color:var(--text2)">${X(text)}</pre>`;
+      }
+    }
+    if (wrap) wrap.style.display = '';
+    loadDocAnnotations(gid, relPath);
+    initAnnotationSelection();
+  } catch(e) {
+    const msg = e.message === 'Session expired' || e.message === 'HTTP 401'
+      ? 'Session expired — sign in again to view this file.'
+      : `Could not load preview: ${X(e.message)}`;
+    if (textEl) textEl.innerHTML = `<div style="color:var(--red);padding:10px">${msg}</div>`;
+    if (wrap)   wrap.style.display = '';
+  }
+}
+
+// ── READER ────────────────────────────────────────────────
+// Tapping a file in Files opens it full size: a PDF as a book, text as one long page.
+// In split view the reader is the right pane, so the file opens there instead.
+function openReader(relPath, page) {
+  if (!curGroup) return;
+  if (!_splitMode) switchTab('preview');
+  previewDoc(curGroup.id, relPath, -1, page);
+}
+function closeReader() { switchTab('docs'); }
+function editReaderFile() {
+  if (curGroup && _currentDocName) openFileEditor(curGroup.id, _currentDocName, String(_currentDocName).split('/').pop());
+}
+
+// ── DOC SUMMARY ───────────────────────────────────────────
+async function toggleDocSummary() {
+  if (!curGroup || !_currentDocName) return;
+  const pnl = document.getElementById('doc-summary-panel');
+  if (!pnl) return;
+  if (_docSummaryVisible) {
+    pnl.style.display = 'none';
+    _docSummaryVisible = false;
+    return;
+  }
+  pnl.style.display = 'block';
+  _docSummaryVisible = true;
+  pnl.innerHTML = `
+    <div class="skel skel-line w80"></div>
+    <div class="skel skel-line w60"></div>
+    <div class="skel skel-line w40"></div>`;
+  try {
+    const d = await api(`/api/groups/${curGroup.id}/documents/${docPathUrl(_currentDocName)}/summary`);
+    if (d.status === 'ready' && d.summary) {
+      renderDocSummary(pnl, d.summary);
+    } else {
+      pnl.innerHTML = `
+        <div style="font-size:var(--fs-xs);color:var(--text2);margin-bottom:10px;line-height:1.6">
+          No summary yet for <b>${X(_currentDocName)}</b>.
+          Summaries are generated automatically after indexing, or you can create one now.
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="generateSingleDocSummary()">Generate summary</button>`;
+    }
+  } catch(e) {
+    pnl.innerHTML = `<div style="color:var(--red);font-size:var(--fs-xs)">Could not load: ${X(e.message)}</div>`;
+  }
+}
+
+function renderDocSummary(pnl, s) {
+  const topics = (s.topics || []).map(t =>
+    `<span style="display:inline-block;padding:2px 8px;background:var(--accent-dim);color:var(--accent-text);border-radius:10px;font-size:var(--fs-xs);font-weight:600;margin-right:4px;margin-bottom:3px">${X(t)}</span>`
+  ).join('');
+  const points = (s.key_points || []).map(p => `<li>${X(p)}</li>`).join('');
+  const learns = (s.what_youll_learn || []).map(l => `<li>${X(l)}</li>`).join('');
+  pnl.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
+      <div style="font-size:var(--fs-xs);color:var(--accent-text);font-weight:700">AI Summary</div>
+      <button class="btn btn-ghost btn-sm" style="padding:2px 8px;font-size:var(--fs-xs)" onclick="generateSingleDocSummary()" title="Regenerate">↻</button>
+    </div>
+    ${s.tldr ? `<div style="font-size:var(--fs-xs);color:var(--text);line-height:1.55;margin-bottom:10px"><b>TL;DR.</b> ${X(s.tldr)}</div>` : ''}
+    ${topics ? `<div style="margin-bottom:10px">${topics}</div>` : ''}
+    ${points ? `<div style="margin-bottom:10px"><div style="font-size:var(--fs-xs);color:var(--text3);font-weight:600;margin-bottom:4px">Key points</div><ul style="font-size:var(--fs-xs);color:var(--text2);line-height:1.65;padding-left:18px;margin:0">${points}</ul></div>` : ''}
+    ${learns ? `<div><div style="font-size:var(--fs-xs);color:var(--text3);font-weight:600;margin-bottom:4px">What you'll learn</div><ul style="font-size:var(--fs-xs);color:var(--text2);line-height:1.65;padding-left:18px;margin:0">${learns}</ul></div>` : ''}
+    <div style="font-size:var(--fs-xs);color:var(--text3);margin-top:8px">${s.chunks_analysed || 0} chunks analysed · ${X(s.model || '')}</div>`;
+}
+
+async function generateSingleDocSummary() {
+  if (!curGroup || !_currentDocName) return;
+  const pnl = document.getElementById('doc-summary-panel');
+  if (pnl) {
+    pnl.innerHTML = `<div style="font-size:var(--fs-xs);color:var(--text2)">Generating summary  -  this can take 10-60s locally…</div>
+      <div class="skel skel-line w80" style="margin-top:8px"></div>
+      <div class="skel skel-line w60"></div>`;
+  }
+  try {
+    await api(`/api/groups/${curGroup.id}/documents/${docPathUrl(_currentDocName)}/summary/generate`, 'POST');
+    // Poll until ready (max 90s)
+    for (let i = 0; i < 30; i++) {
+      await new Promise(r => setTimeout(r, 3000));
+      const d = await api(`/api/groups/${curGroup.id}/documents/${docPathUrl(_currentDocName)}/summary`);
+      if (d.status === 'ready' && d.summary && pnl) {
+        renderDocSummary(pnl, d.summary);
+        return;
+      }
+    }
+    if (pnl) pnl.innerHTML = `<div style="color:var(--yellow);font-size:var(--fs-xs)">Summary still generating  -  try refreshing.</div>`;
+  } catch(e) {
+    if (pnl) pnl.innerHTML = `<div style="color:var(--red);font-size:var(--fs-xs)">Generation failed: ${X(e.message)}</div>`;
+  }
+}
+
+// ── CONCEPT MAP ───────────────────────────────────────────
+let _cmInitialized = false;
+
+function initConceptMap() {
+  if (!curGroup || typeof ConceptMap === 'undefined') return;
+  const token = store.get('rag_token') || '';
+  if (!_cmInitialized) {
+    ConceptMap.init('cm-container', curGroup.id, token);
+    _cmInitialized = true;
+    // Wire up sidebar callbacks
+    window._cmOpenWiki = () => switchTab('summaries');
+    window._cmChat = (label) => {
+      switchTab('chat');
+      if (window.RagChat?.ask) {
+        window.RagChat.ask(`${uiT('Explain:')} ${label}`);
+        return;
+      }
+      toast('Chat is not loaded — reload the page', 'error');
+    };
+  } else {
+    cmApplyFilters();
+  }
+}
+
+function cmApplyFilters() {
+  if (!curGroup || typeof ConceptMap === 'undefined') return;
+  const nodeType    = document.getElementById('cm-node-type')?.value || '';
+  const crossDoc    = document.getElementById('cm-cross-doc')?.checked !== false;
+  const limit       = parseInt(document.getElementById('cm-limit')?.value || '300');
+  const relType     = document.getElementById('cm-relation-type')?.value || '';
+  ConceptMap.load(curGroup.id, nodeType, '', limit, crossDoc ? 2 : 0, relType);
+}
+
+// ── REPORTS ───────────────────────────────────────────────
+async function exportGroup() {
+  if (!curGroup) return;
+  toast('Building export ZIP…', 'info');
+  try {
+    const r = await fetch(`/api/export/group?group_id=${curGroup.id}`, {
+      headers: authToken ? {'Authorization': `Bearer ${authToken}`} : {}
+    });
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}));
+      throw new Error(d.detail || `HTTP ${r.status}`);
+    }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const cd = r.headers.get('content-disposition') || '';
+    const match = cd.match(/filename="([^"]+)"/);
+    a.download = match ? match[1] : `${curGroup.name || 'group'}_export.zip`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('Export ready!', 'success');
+  } catch(e) {
+    toast('Export failed: ' + e.message, 'error');
+  }
+}
+
+async function downloadReport() {
+  if (!curGroup) return;
+  toast('Generating report…', 'info');
+  try {
+    const r = await fetch(`/api/groups/${curGroup.id}/report`, {
+      headers: authToken ? {'Authorization': `Bearer ${authToken}`} : {}
+    });
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}));
+      throw new Error(d.detail || `HTTP ${r.status}`);
+    }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    // PDF, or HTML to print to PDF when the build has no PDF renderer.
+    const m = (r.headers.get('Content-Disposition') || '').match(/filename="([^"]+)"/);
+    a.download = m ? m[1] : `${curGroup.name || 'report'}_report.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast(a.download.endsWith('.html') ? 'Report downloaded. Open it and print to PDF.' : 'Report downloaded!', 'success');
+  } catch(e) {
+    toast('Report failed: ' + e.message, 'error');
+  }
+}
+
+// ── ADMIN PANEL (backup, metrics, audit) ─────────────────
+async function showAdminPanel() {
+  const view = document.getElementById('view-settings');
+  if (!view) return;
+  let metricsHtml = '<div style="color:var(--text3)">Loading metrics…</div>';
+  try {
+    const m = await api('/api/admin/metrics');
+    const uptimeH = Math.floor(m.uptime_seconds / 3600);
+    const uptimeM = Math.floor((m.uptime_seconds % 3600) / 60);
+    metricsHtml = `
+      <div class="stats-row" style="margin-bottom:12px">
+        <div class="stat-tile"><div class="stat-tile-val">${uptimeH}h ${uptimeM}m</div><div class="stat-tile-lbl">Uptime</div></div>
+        <div class="stat-tile"><div class="stat-tile-val">${m.memory_rss_mb} MB</div><div class="stat-tile-lbl">Memory</div></div>
+        <div class="stat-tile"><div class="stat-tile-val">${m.request_count}</div><div class="stat-tile-lbl">Requests</div></div>
+        <div class="stat-tile"><div class="stat-tile-val">${m.active_ws_connections}</div><div class="stat-tile-lbl">WS Conns</div></div>
+        <div class="stat-tile"><div class="stat-tile-val">${m.user_count}</div><div class="stat-tile-lbl">Users</div></div>
+        <div class="stat-tile"><div class="stat-tile-val" style="color:${m.ollama_ok?'var(--green)':'var(--red)'}">${m.ollama_ok?'OK':'Down'}</div><div class="stat-tile-lbl">Ollama</div></div>
+        <div class="stat-tile"><div class="stat-tile-val">${m.total_disk_mb} MB</div><div class="stat-tile-lbl">Data Disk</div></div>
+      </div>
+      ${m.ollama_models?.length ? `<div style="font-size:var(--fs-xs);color:var(--text3);margin-bottom:8px">Models: ${X(m.ollama_models.join(', '))}</div>` : ''}`;
+  } catch(e) {
+    metricsHtml = `<div style="color:var(--text3);font-size:var(--fs-xs)">Metrics unavailable (admin only)</div>`;
+  }
+
+  let backupsHtml = '';
+  try {
+    const b = await api('/api/admin/backups');
+    const rows = (b.backups||[]).map(bk => {
+      const sizeMB = (bk.size / 1024 / 1024).toFixed(1);
+      return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:var(--fs-xs)">
+        <span style="flex:1;color:var(--text)">${X(bk.filename)}</span>
+        <span style="color:var(--text3)">${sizeMB} MB</span>
+        <a href="/api/admin/backups/${encodeURIComponent(bk.filename)}" class="btn btn-ghost btn-sm" style="font-size:var(--fs-xs);padding:2px 8px">Download</a>
+      </div>`;
+    }).join('');
+    backupsHtml = rows || '<div style="font-size:var(--fs-xs);color:var(--text3)">No backups yet</div>';
+  } catch { backupsHtml = ''; }
+
+  const html = `
+    <div class="setting-group" id="admin-metrics-group">
+      <div class="setting-group-title">System Health</div>
+      ${metricsHtml}
+    </div>
+    <div class="setting-group" id="admin-backup-group">
+      <div class="setting-group-title">Backups</div>
+      <div style="margin-bottom:10px">
+        <button class="btn btn-primary btn-sm" onclick="createBackup()">Create Backup Now</button>
+      </div>
+      ${backupsHtml}
+    </div>`;
+
+  let adminPanel = document.getElementById('admin-panel');
+  if (!adminPanel) {
+    adminPanel = document.createElement('div');
+    adminPanel.id = 'admin-panel';
+    const settingsContent = view.querySelector('.settings-scroll') || view;
+    settingsContent.appendChild(adminPanel);
+  }
+  adminPanel.innerHTML = html;
+}
+
+async function createBackup() {
+  toast('Creating backup…', 'info');
+  try {
+    const d = await api('/api/admin/backup', 'POST');
+    toast(`Backup created: ${d.filename}`, 'success');
+    showAdminPanel();
+  } catch(e) {
+    toast('Backup failed: ' + e.message, 'error');
+  }
+}
+
+// ── ANNOTATIONS UI ───────────────────────────────────────
+let _docAnnotations = [];
+let _annSelectedColor = 'yellow';
+let _annPendingRange = null;
+
+function toggleAnnotationSidebar() {
+  const sb = document.getElementById('ann-sidebar');
+  if (!sb) return;
+  sb.classList.toggle('collapsed');
+  const btn = document.getElementById('ann-toggle-btn');
+  if (btn) btn.style.color = sb.classList.contains('collapsed') ? '' : 'var(--accent)';
+}
+
+async function loadDocAnnotations(gid, docName) {
+  _docAnnotations = [];
+  try {
+    const d = await api(`/api/groups/${gid}/documents/${docPathUrl(docName)}/annotations`);
+    _docAnnotations = d.annotations || [];
+  } catch { /* ignore */ }
+  renderAnnotationHighlights();
+  renderAnnotationSidebar();
+}
+
+function getTextOffset(container, targetNode, targetOffset) {
+  let count = 0;
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  while (walker.nextNode()) {
+    if (walker.currentNode === targetNode) return count + targetOffset;
+    count += walker.currentNode.length;
+  }
+  return count;
+}
+
+function findNodeAtOffset(container, offset) {
+  let count = 0;
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    if (count + node.length > offset) return { node, offset: offset - count };
+    count += node.length;
+  }
+  return null;
+}
+
+function renderAnnotationHighlights() {
+  const el = document.getElementById('prev-text');
+  if (!el) return;
+  el.querySelectorAll('mark.ann-hl').forEach(m => {
+    const parent = m.parentNode;
+    while (m.firstChild) parent.insertBefore(m.firstChild, m);
+    parent.removeChild(m);
+  });
+  el.normalize();
+
+  const sorted = [..._docAnnotations].sort((a, b) => b.start_offset - a.start_offset);
+  for (const ann of sorted) {
+    try {
+      const startInfo = findNodeAtOffset(el, ann.start_offset);
+      const endInfo = findNodeAtOffset(el, ann.end_offset);
+      if (!startInfo || !endInfo) continue;
+      const range = document.createRange();
+      range.setStart(startInfo.node, startInfo.offset);
+      range.setEnd(endInfo.node, endInfo.offset);
+      const mark = document.createElement('mark');
+      mark.className = 'ann-hl';
+      mark.style.backgroundColor = annColor(ann.color, 0.25);
+      mark.style.borderBottom = `2px solid ${annColor(ann.color)}`;
+      mark.dataset.annId = ann.id;
+      mark.title = ann.note || ann.selected_text;
+      mark.addEventListener('click', () => scrollToAnnInSidebar(ann.id));
+      range.surroundContents(mark);
+    } catch { /* range may span multiple nodes partially */ }
+  }
+}
+
+function scrollToAnnInSidebar(annId) {
+  const sb = document.getElementById('ann-sidebar');
+  if (sb && sb.classList.contains('collapsed')) toggleAnnotationSidebar();
+  const item = document.querySelector(`.ann-item[data-id="${annId}"]`);
+  if (item) {
+    item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    item.style.background = 'var(--accent-dim)';
+    setTimeout(() => item.style.background = '', 1200);
+  }
+}
+
+function renderAnnotationSidebar() {
+  const list = document.getElementById('ann-list');
+  const countEl = document.getElementById('ann-count');
+  if (!list) return;
+  if (countEl) countEl.textContent = _docAnnotations.length ? `${_docAnnotations.length}` : '';
+  if (!_docAnnotations.length) {
+    list.innerHTML = '<div class="ann-empty">Select text in the preview to add highlights.</div>';
+    return;
+  }
+  list.innerHTML = _docAnnotations.map(a => `
+    <div class="ann-item" data-id="${a.id}" onclick="highlightAnnInPreview('${a.id}')">
+      <div class="ann-item-color" style="background:${annColor(a.color)}"></div>
+      <div class="ann-item-text">"${X((a.selected_text || '').slice(0, 120))}"</div>
+      ${a.note ? `<div class="ann-item-note">${X(a.note)}</div>` : ''}
+      <div class="ann-item-actions">
+        <button class="ann-item-del" onclick="event.stopPropagation();deleteAnnotation('${a.id}','${X(a.doc_name || _currentDocName)}')">Remove</button>
+      </div>
+    </div>`).join('');
+}
+
+function highlightAnnInPreview(annId) {
+  const mark = document.querySelector(`mark.ann-hl[data-ann-id="${annId}"]`);
+  if (mark) {
+    mark.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const orig = mark.style.backgroundColor;
+    mark.style.backgroundColor = mark.style.borderBottomColor;
+    setTimeout(() => mark.style.backgroundColor = orig, 800);
+  }
+}
+
+let _annSelectionBound = false;
+function initAnnotationSelection() {
+  if (_annSelectionBound) return;
+  const wrap = document.getElementById('prev-text-wrap');
+  if (!wrap) return;
+  wrap.addEventListener('mouseup', onTextSelected);
+  wrap.addEventListener('touchend', onTextSelected);
+  _annSelectionBound = true;
+}
+
+function onTextSelected() {
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed || !sel.rangeCount) return;
+  const range = sel.getRangeAt(0);
+  const container = document.getElementById('prev-text');
+  if (!container || !container.contains(range.startContainer) || !container.contains(range.endContainer)) return;
+  const text = sel.toString().trim();
+  if (!text || text.length < 2) return;
+
+  _annPendingRange = {
+    startOffset: getTextOffset(container, range.startContainer, range.startOffset),
+    endOffset: getTextOffset(container, range.endContainer, range.endOffset),
+    text: text.slice(0, 500),
+  };
+
+  const rect = range.getBoundingClientRect();
+  showAnnPopover(rect.left + rect.width / 2, rect.bottom + 8);
+}
+
+function showAnnPopover(x, y) {
+  const pop = document.getElementById('ann-popover');
+  if (!pop) return;
+  pop.style.left = Math.max(10, Math.min(x - 110, window.innerWidth - 240)) + 'px';
+  pop.style.top = Math.min(y, window.innerHeight - 180) + 'px';
+  pop.classList.add('visible');
+  document.getElementById('ann-note-input').value = '';
+  _annSelectedColor = 'yellow';
+  pop.querySelectorAll('.ann-color-btn').forEach(b => b.classList.toggle('active', b.dataset.color === _annSelectedColor));
+}
+
+function hideAnnPopover() {
+  const pop = document.getElementById('ann-popover');
+  if (pop) pop.classList.remove('visible');
+  _annPendingRange = null;
+  window.getSelection()?.removeAllRanges();
+}
+
+function pickAnnColor(btn) {
+  _annSelectedColor = btn.dataset.color;
+  document.querySelectorAll('.ann-color-btn').forEach(b => b.classList.toggle('active', b === btn));
+}
+
+async function saveAnnotationFromPopover() {
+  if (!curGroup || !_currentDocName || !_annPendingRange) return;
+  const note = (document.getElementById('ann-note-input')?.value || '').trim();
+  try {
+    await api(`/api/groups/${curGroup.id}/documents/${docPathUrl(_currentDocName)}/annotations`, 'POST', {
+      doc_name: _currentDocName,
+      start_offset: _annPendingRange.startOffset,
+      end_offset: _annPendingRange.endOffset,
+      selected_text: _annPendingRange.text,
+      note,
+      color: _annSelectedColor,
+    });
+    hideAnnPopover();
+    await loadDocAnnotations(curGroup.id, _currentDocName);
+    toast('Highlight saved', 'success');
+  } catch (e) {
+    toast('Failed to save: ' + e.message, 'error');
+  }
+}
+
+async function deleteAnnotation(annId, docName) {
+  if (!curGroup) return;
+  try {
+    await api(`/api/groups/${curGroup.id}/annotations/${annId}?doc_name=${encodeURIComponent(docName)}`, 'DELETE');
+    await loadDocAnnotations(curGroup.id, _currentDocName);
+    toast('Highlight removed', 'success');
+  } catch (e) {
+    toast('Failed to remove: ' + e.message, 'error');
+  }
+}
+
+document.addEventListener('mousedown', (e) => {
+  const pop = document.getElementById('ann-popover');
+  if (pop && pop.classList.contains('visible') && !pop.contains(e.target)) hideAnnPopover();
+});
+
+// ── BRANDING ─────────────────────────────────────────────
+let _brandingAccentColor = null;
+
+async function applyBranding() {
+  try {
+    const d = await api('/api/meta');
+    const b = d.branding || {};
+    if (b.app_name) {
+      window._brandAppName = b.app_name;
+      document.title = b.app_name;
+      const logoName = document.querySelector('.sb-logo-name');
+      if (logoName) logoName.textContent = b.app_name;
+      const mobTitle = document.getElementById('mob-bar-title');
+      // only replace the default brand placeholder, never a contextual title
+      if (mobTitle && mobTitle.textContent === 'pdm Legal Workspace') mobTitle.textContent = b.app_name;
+      const authName = document.querySelector('#auth-screen .auth-app-name');
+      if (authName) authName.textContent = b.app_name;
+    }
+    if (b.tagline) {
+      const sub = document.querySelector('.sb-logo-sub');
+      if (sub) sub.textContent = b.tagline;
+    }
+    if (b.primary_color) {
+      _brandingAccentColor = b.primary_color;
+      document.documentElement.style.setProperty('--accent', b.primary_color);
+    }
+    if (b.logo_url) {
+      const icon = document.querySelector('.sb-logo-icon');
+      if (icon) icon.innerHTML = `<img src="${X(b.logo_url)}" alt="" style="width:28px;height:28px;border-radius:6px">`;
+    }
+    if (d.disclaimer) {
+      const disc = document.getElementById('auth-disclaimer');
+      if (disc) disc.textContent = d.disclaimer;
+    }
+    if (d.languages) LANGUAGES = d.languages;
+    if (d.default_language) DEFAULT_LANG = d.default_language;
+  } catch { /* not critical */ }
+  // Translate the pre-auth shell to the install default language.
+  applyTranslations(DEFAULT_LANG);
+}
+
+// ── BOOT ──────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', init);
+</script>
+<script type="module" src="/static/chat/chat.js?v=20261015b"></script>
+
+<!-- Lightbox overlay -->
+<div id="img-lightbox" onclick="closeLightbox(event)">
+  <button id="lb-close" onclick="closeLightbox()" title="Close (Esc)">×</button>
+  <img id="lb-img" src="" alt="">
+  <div id="lb-counter"></div>
+</div>
+</body>
+</html>

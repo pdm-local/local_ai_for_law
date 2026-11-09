@@ -1,0 +1,41 @@
+/* ─── AUTH SCREEN ─────────────────────────────────────── */
+#auth-screen {
+  display:none; position:fixed; inset:0; z-index:1000;
+  background:
+    radial-gradient(600px 320px at 50% 30%, var(--accent-dim), transparent 70%),
+    var(--bg);
+  align-items:center; justify-content:center; flex-direction:column;
+  padding:20px;
+}
+.auth-card {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:var(--radius-xl); padding:36px 32px 28px;
+  max-width:392px; width:100%;
+  box-shadow:var(--shadow-lg);
+  animation:authIn .35s ease-out;
+}
+@keyframes authIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+.auth-head { text-align:center; margin-bottom:26px; }
+.auth-logo-wrap {
+  position:relative; display:inline-flex;
+  margin-bottom:12px;
+}
+#auth-logo {
+  position:relative; width:64px; height:64px; display:block;
+}
+.auth-app-name {
+  font-size:var(--fs-xl); font-weight:800; color:var(--text);
+  letter-spacing:-.4px;
+}
+.auth-subtitle { font-size:var(--fs-xs); color:var(--text2); margin-top:5px; }
+.auth-form { display:flex; flex-direction:column; gap:13px; }
+.auth-btn-main { width:100%; padding:10px; font-size:var(--fs-xs); margin-top:2px; }
+.auth-error {
+  display:none; color:var(--red); font-size:var(--fs-xs); text-align:center;
+  padding:7px 10px; background:var(--red-dim);
+  border:1px solid var(--red-line); border-radius:var(--radius-sm);
+}
+.auth-disclaimer {
+  margin-top:18px; max-width:392px; text-align:center;
+  font-size:var(--fs-xs); color:var(--text3); line-height:1.5;
+}

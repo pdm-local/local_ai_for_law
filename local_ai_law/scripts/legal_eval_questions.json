@@ -1,0 +1,112 @@
+{
+  "_comment": "Edit this file with your own fixed evaluation questions. Run: python scripts/legal_eval.py [--full]. Each question needs an 'expect' block; every expectation field is optional — only the ones present are scored.",
+  "_fields": {
+    "question": "the exact question to ask",
+    "group_id": "group to search (default: 'default')",
+    "username": "user whose index to use (default: 'default')",
+    "expect.source": "filename (or substring) that must appear in the retrieved sources",
+    "expect.page_min / expect.page_max": "page range the answer should come from",
+    "expect.must_include_terms": "facts/phrases a good answer must contain (scores completeness + specificity)",
+    "expect.separate_labels": "category/contract names that must stay separate — each must be retrieved and, in --full mode, appear in the answer",
+    "expect.answer_absent": "true = the documents do NOT contain this; a good answer must say so",
+    "expect.type": "comparison | when_to_use | what_changed | obligations — checked against the template detector"
+  },
+  "questions": [
+    {
+      "id": "q1-contract-selection",
+      "question": "When should an authority use the Model Services Contract instead of the Mid-Tier or Short Form Contract?",
+      "group_id": "85a56c8b",
+      "username": "pdm95",
+      "expect": {
+        "source": "Buyer_Guidance",
+        "page_min": 7,
+        "page_max": 8,
+        "must_include_terms": [
+          "£20m",
+          "complex"
+        ],
+        "separate_labels": [
+          "Model Services Contract",
+          "Mid-Tier Contract",
+          "Short Form Contract"
+        ],
+        "type": "when_to_use"
+      }
+    },
+    {
+      "id": "q2-what-changed",
+      "question": "What changed in version 2.2A because of the Procurement Act 2023?",
+      "group_id": "85a56c8b",
+      "username": "pdm95",
+      "expect": {
+        "source": "Buyer_Guidance",
+        "must_include_terms": [
+          "transparency",
+          "KPI"
+        ],
+        "type": "what_changed"
+      }
+    },
+    {
+      "id": "q3-honesty",
+      "question": "What does the guidance say about cryptocurrency payments?",
+      "group_id": "85a56c8b",
+      "username": "pdm95",
+      "expect": {
+        "answer_absent": true
+      }
+    },
+    {
+      "id": "q4-comparison-table",
+      "question": "Compare the Model Services Contract, the Mid-Tier Contract and the Short Form Contract in a table.",
+      "group_id": "85a56c8b",
+      "username": "pdm95",
+      "expect": {
+        "source": "Buyer_Guidance",
+        "separate_labels": [
+          "Model Services Contract",
+          "Mid-Tier Contract",
+          "Short Form Contract"
+        ],
+        "type": "comparison"
+      }
+    },
+    {
+      "id": "q5-page-citation",
+      "question": "On which page does the guidance set the contract-value threshold for the Model Services Contract, and what is that threshold?",
+      "group_id": "85a56c8b",
+      "username": "pdm95",
+      "expect": {
+        "source": "Buyer_Guidance",
+        "page_min": 7,
+        "page_max": 8,
+        "must_include_terms": [
+          "£20m"
+        ]
+      }
+    },
+    {
+      "id": "q6-honesty-criminal-penalty",
+      "question": "What criminal penalties does the guidance impose on suppliers for late delivery?",
+      "group_id": "85a56c8b",
+      "username": "pdm95",
+      "expect": {
+        "answer_absent": true
+      }
+    },
+    {
+      "id": "q7-privilege-marking",
+      "question": "What does counsel's advisory opinion conclude about enforcing the liability cap in the Orion / Novael Master Services Agreement?",
+      "group_id": "94f80acb",
+      "username": "pdm95",
+      "_note": "Source is a privileged opinion (frontmatter privileged: true); in --full mode the answer should flag the source as privileged. must_include_terms target the real legal basis so retrieval-only mode still scores.",
+      "expect": {
+        "source": "0104-opinion",
+        "must_include_terms": [
+          "6:248",
+          "liability cap"
+        ]
+      }
+    }
+  ]
+}

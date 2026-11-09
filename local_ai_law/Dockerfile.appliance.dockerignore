@@ -1,0 +1,67 @@
+# Build-context filter for the APPLIANCE image (BuildKit uses this file when
+# building with -f Dockerfile.appliance). Unlike the default .dockerignore this
+# does NOT exclude deploy/ollama-bundle/ — the appliance bakes those weights in.
+# It DOES exclude every secret, credential store, tenant data dir, and
+# internal-only document so none of those ship to a client box.
+
+# ── VCS / Python / venv / caches ──────────────────────────────────────────────
+.git/
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+
+# ── Secrets & per-instance state — never bake these in ────────────────────────
+.env
+.env.*
+!.env.example
+.jwt_secret
+users.json
+groups.json
+settings.json
+secrets.json
+audit.log
+certs/
+backup_bundle/
+
+# ── Runtime tenant data (users, uploads, vector store, summaries, jobs) ───────
+data/
+rag_db/
+uploads/
+chat_history/
+overviews/
+doc_summaries/
+flashcards/
+*.db
+*.db-shm
+*.db-wal
+
+# ── Internal-only docs & planning — never ship to a client ────────────────────
+businessplan.md
+CLAUDE.md
+IMPROVEMENTS.md
+future_improvements.md
+PLAN.md
+
+# ── Logs / pids / editor & tool state ─────────────────────────────────────────
+*.log
+logs/
+*.pid
+.agents/
+.codex/
+.claude/
+.vscode/
+.idea/
+
+# ── Build output / local dev cruft ────────────────────────────────────────────
+dist/
+build/
+frontend/node_modules/
+frontend/dist/
+
+# NOTE: deploy/ollama-bundle/ is intentionally NOT ignored here — it is the
+# baked model store the appliance COPYs into /models.

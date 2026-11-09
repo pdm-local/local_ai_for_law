@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Finder — Where should I look?</title>
+<link rel="icon" href="/static/logo-64.png" type="image/png">
+<!-- The app's tokens and the pdm.ai palette: the Finder follows the preset chosen in Settings. -->
+<link rel="stylesheet" href="/static/css/00-tokens.css">
+<script>
+(function () {
+  var t = null;
+  try { t = localStorage.getItem('law_theme'); } catch (e) {}
+  var ok = ['midnight', 'daylight', 'graphite', 'ivory', 'slate', 'forest', 'paper', 'contrast'];
+  document.documentElement.setAttribute('data-theme', ok.indexOf(t) >= 0 ? t : 'midnight');
+})();
+</script>
+<style>
+  :root{
+    --panel:var(--surface); --panel2:var(--card); --line:var(--border);
+    --muted:var(--text2); --chip:var(--card2); --good:var(--green);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.5 var(--font);
+    padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+  .wrap{max-width:820px;margin:0 auto;padding:32px 20px calc(80px + env(safe-area-inset-bottom))}
+  .topline{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  header h1{font-size:var(--fs-xl);margin:0 0 4px}
+  header p{color:var(--muted);margin:0 0 24px}
+  .langtoggle{display:flex;gap:0;flex-shrink:0;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .langtoggle button{background:var(--panel2);color:var(--muted);border:none;border-radius:0;
+    padding:7px 12px;font-size:var(--fs-xs);font-weight:600;cursor:pointer;min-height:36px;border-radius:0}
+  .langtoggle button.active{background:var(--accent);color:var(--on-accent)}
+  .bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+  select,input,button{font:inherit;border-radius:8px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--text);padding:10px 12px;min-height:44px}
+  select{min-width:180px}
+  input#q{flex:1;min-width:240px}
+  button{background:var(--accent);border-color:var(--accent);color:var(--on-accent);cursor:pointer;font-weight:600}
+  button:hover{background:var(--accent-h)}
+  :focus{outline:none} :focus-visible{outline:none;box-shadow:var(--ring)}
+  button:disabled{opacity:.5;cursor:wait}
+  .hint{color:var(--muted);font-size:var(--fs-xs);margin:10px 2px 0}
+  .examples{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 0}
+  .examples span{background:var(--chip);border:1px solid var(--line);border-radius:999px;
+    padding:8px 14px;font-size:var(--fs-xs);color:var(--muted);cursor:pointer;min-height:36px;display:inline-flex;align-items:center}
+  .examples span:hover{color:var(--text);border-color:var(--accent)}
+  #status{margin:22px 2px 6px;color:var(--muted);min-height:20px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:16px 18px;margin:12px 0;display:flex;gap:14px}
+  .rank{font-size:var(--fs-xl);font-weight:700;color:var(--muted);min-width:28px;text-align:center}
+  .body{flex:1;min-width:0}
+  .title{font-size:var(--fs-md);font-weight:600;margin:0 0 6px;word-break:break-word}
+  .title a{color:var(--text);text-decoration:none}
+  .title a:hover{color:var(--accent-text);text-decoration:underline}
+  .meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 8px}
+  .chip{background:var(--chip);border:1px solid var(--line);border-radius:999px;
+    padding:3px 10px;font-size:var(--fs-xs);color:var(--muted)}
+  .chip.matter{color:var(--accent-text)}
+  .chip.sec{color:var(--text)}
+  .snippet{color:var(--muted);font-size:var(--fs-xs);background:var(--panel2);
+    border-left:3px solid var(--line);border-radius:0 6px 6px 0;padding:8px 12px;margin:8px 0 0;
+    white-space:pre-wrap;word-break:break-word}
+  .score{display:flex;align-items:center;gap:8px;font-size:var(--fs-xs);color:var(--muted);margin-top:8px}
+  .scorebar{height:6px;width:120px;background:var(--panel2);border-radius:4px;overflow:hidden}
+  .scorefill{height:100%;background:var(--good)}
+  .foot{margin-top:30px;color:var(--muted);font-size:var(--fs-xs);text-align:center;line-height:1.7}
+
+  /* ── Tablet (641–1024px) ── */
+  @media (min-width:641px) and (max-width:1024px){
+    .wrap{padding:28px 20px 72px}
+    header h1{font-size:var(--fs-xl)}
+    select{min-width:160px}
+  }
+  /* ── Phone (≤640px) ── */
+  @media (max-width:640px){
+    .wrap{padding:20px 14px calc(64px + env(safe-area-inset-bottom))}
+    .topline{flex-direction:column-reverse;align-items:stretch}
+    .langtoggle{align-self:flex-end}
+    header h1{font-size:var(--fs-xl);margin-top:10px}
+    header p{margin-bottom:18px}
+    .bar{flex-direction:column;align-items:stretch;padding:10px;gap:8px}
+    select,input#q{width:100%;min-width:0}
+    button#go{width:100%}
+    .card{flex-direction:row;gap:10px;padding:14px}
+    .rank{min-width:20px;font-size:var(--fs-lg)}
+    .scorebar{width:90px}
+    .examples span{font-size:var(--fs-xs)}
+    select,input{font-size:16px}  /* 16px or iOS zooms on focus */
+    .langtoggle button,.examples span{min-height:44px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topline">
+    <header>
+      <h1 id="h-title">Where should I look?</h1>
+      <p id="h-sub">Ask a question. You get the documents and the exact passage — <b>you</b> read, <b>you</b> decide.</p>
+    </header>
+    <div class="langtoggle" id="langtoggle">
+      <button data-lang="en">EN</button>
+      <button data-lang="nl">NL</button>
+    </div>
+  </div>
+
+  <div class="bar">
+    <select id="group" title="Matter / group"></select>
+    <input id="q" autocomplete="off">
+    <button id="go">Search</button>
+  </div>
+  <div class="examples" id="examples"></div>
+  <div class="hint" id="hint"></div>
+
+  <div id="status"></div>
+  <div id="results"></div>
+
+  <div class="foot" id="foot"></div>
+</div>
+
+<script>
+// Browser storage throws in a private window or when site data is blocked.
+function _lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function _lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+const STR = {
+  en: {
+    htmlLang: "en",
+    title: "Where should I look?",
+    sub: 'Ask a question. You get the documents and the exact passage — <b>you</b> read, <b>you</b> decide.',
+    groupTitle: "Matter / group",
+    placeholder: "e.g. liability cap in the CloudSync contracts",
+    search: "Search",
+    examples: [
+      "Compare the liability caps in the CloudSync contracts",
+      "Which sub-processors are allowed and what is our data-breach notification duty?",
+      "What prior settlement exists with TrendMaker?",
+    ],
+    hint: 'This is a <b>finder</b>, not an answer machine. No AI text, no invented facts — only pointers to your own sources.',
+    foot: "Local &amp; private — nothing leaves this device. · Assistant, not legal advice.",
+    searching: "Searching…",
+    noGroups: "No matters found. Log in first and index a group.",
+    pickGroup: "Pick a matter first.",
+    loadFail: "could not load matters",
+    noHits: "No hits. Try other words.",
+    places: n => n + " place(s) to look:",
+    relevance: "relevance",
+  },
+  nl: {
+    htmlLang: "nl",
+    title: "Waar moet ik kijken?",
+    sub: 'Stel een vraag. Je krijgt de documenten en de exacte passage — <b>jij</b> leest, <b>jij</b> beslist.',
+    groupTitle: "Dossier / groep",
+    placeholder: "bv. aansprakelijkheidsbeperking in de CloudSync-contracten",
+    search: "Zoek",
+    examples: [
+      "Vergelijk de aansprakelijkheidsbeperkingen in de CloudSync-contracten",
+      "Welke subverwerkers zijn toegestaan en wat is de meldplicht bij een datalek?",
+      "Welke eerdere schikking bestaat met deze partij?",
+    ],
+    hint: 'Dit is een <b>vinder</b>, geen antwoordmachine. Geen AI-tekst, geen verzonnen feiten — alleen verwijzingen naar je eigen bronnen.',
+    foot: "Lokaal &amp; privé — niets verlaat dit apparaat. · Assistent, geen juridisch advies.",
+    searching: "Zoeken…",
+    noGroups: "Geen dossiers gevonden. Log eerst in en indexeer een groep.",
+    pickGroup: "Kies eerst een dossier.",
+    loadFail: "kon dossiers niet laden",
+    noHits: "Geen treffers. Probeer andere woorden.",
+    places: n => n + " plek(ken) om te kijken:",
+    relevance: "relevantie",
+  },
+};
+
+const params = new URLSearchParams(location.search);
+let LANG = params.get("lang") || _lsGet("finder_lang") || "en";
+if (LANG !== "nl") LANG = "en";
+
+const TOKEN = _lsGet("rag_token") || "";
+const $ = s => document.querySelector(s);
+const groupSel = $("#group"), qIn = $("#q"), goBtn = $("#go"),
+      statusEl = $("#status"), resEl = $("#results"), examplesEl = $("#examples");
+
+function t(){ return STR[LANG]; }
+
+function applyLang(){
+  const s = t();
+  document.documentElement.lang = s.htmlLang;
+  $("#h-title").textContent = s.title;
+  $("#h-sub").innerHTML = s.sub;
+  groupSel.title = s.groupTitle;
+  qIn.placeholder = s.placeholder;
+  goBtn.textContent = s.search;
+  $("#hint").innerHTML = s.hint;
+  $("#foot").innerHTML = s.foot;
+  examplesEl.innerHTML = "";
+  for (const ex of s.examples){
+    const sp = document.createElement("span");
+    sp.textContent = ex;
+    sp.onclick = () => { qIn.value = ex; search(); };
+    examplesEl.appendChild(sp);
+  }
+  for (const b of document.querySelectorAll("#langtoggle button"))
+    b.classList.toggle("active", b.dataset.lang === LANG);
+}
+
+function setLang(lang){
+  LANG = (lang === "nl") ? "nl" : "en";
+  _lsSet("finder_lang", LANG);
+  applyLang();
+}
+for (const b of document.querySelectorAll("#langtoggle button"))
+  b.onclick = () => setLang(b.dataset.lang);
+
+function headers(){
+  const h = {"Content-Type":"application/json"};
+  if (TOKEN) h["Authorization"] = "Bearer " + TOKEN;
+  return h;
+}
+function esc(s){return (s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+
+async function loadGroups(){
+  try{
+    const r = await fetch("/api/groups", {headers:headers(), credentials:"same-origin"});
+    if(!r.ok) throw new Error(t().loadFail + " ("+r.status+")");
+    const data = await r.json();
+    const groups = Array.isArray(data) ? data : (data.groups || []);
+    groupSel.innerHTML = "";
+    const last = _lsGet("rag_group") || "";
+    for(const g of groups){
+      const o = document.createElement("option");
+      o.value = g.id || g.group_id; o.textContent = g.name || o.value;
+      if(o.value === last) o.selected = true;
+      groupSel.appendChild(o);
+    }
+    if(!groups.length) statusEl.textContent = t().noGroups;
+  }catch(e){ statusEl.textContent = "⚠ " + e.message; }
+}
+
+function fileUrl(gid, source){
+  return "/api/groups/" + encodeURIComponent(gid) +
+         "/documents/" + source.split("/").map(encodeURIComponent).join("/") + "/file";
+}
+
+function render(gid, pointers){
+  resEl.innerHTML = "";
+  if(!pointers.length){ statusEl.textContent = t().noHits; return; }
+  statusEl.textContent = t().places(pointers.length);
+  pointers.forEach((p, i) => {
+    const card = document.createElement("div"); card.className = "card";
+    const secs = (p.sections||[]).map(s=>`<span class="chip sec">${esc(s)}</span>`).join("");
+    const matterLbl = LANG === "nl" ? "dossier" : "matter";
+    const matter = p.matter ? `<span class="chip matter">${matterLbl} ${esc(p.matter)}</span>` : "";
+    const pct = Math.round((p.score||0)*100);
+    card.innerHTML = `
+      <div class="rank">${i+1}</div>
+      <div class="body">
+        <div class="title"><a href="${fileUrl(gid,p.source)}" target="_blank" rel="noopener">${esc(p.title)}</a></div>
+        <div class="meta">${matter}${secs}</div>
+        ${p.snippet ? `<div class="snippet">${esc(p.snippet)}</div>` : ""}
+        <div class="score"><span>${t().relevance}</span>
+          <span class="scorebar"><span class="scorefill" style="width:${pct}%"></span></span>
+          <span>${pct}%</span></div>
+      </div>`;
+    resEl.appendChild(card);
+  });
+}
+
+async function search(){
+  const gid = groupSel.value, query = qIn.value.trim();
+  if(!gid){ statusEl.textContent = t().pickGroup; return; }
+  if(!query){ qIn.focus(); return; }
+  _lsSet("rag_group", gid);
+  goBtn.disabled = true; statusEl.textContent = t().searching; resEl.innerHTML = "";
+  try{
+    const r = await fetch("/api/find", {method:"POST", headers:headers(),
+      credentials:"same-origin", body:JSON.stringify({query, group_id:gid, max_docs:8})});
+    if(!r.ok){ const t2=await r.text(); throw new Error(r.status+" "+t2); }
+    const data = await r.json();
+    render(gid, data.pointers||[]);
+  }catch(e){ statusEl.textContent = "⚠ " + e.message; }
+  finally{ goBtn.disabled = false; }
+}
+
+goBtn.onclick = search;
+qIn.addEventListener("keydown", e => { if(e.key==="Enter") search(); });
+
+applyLang();
+loadGroups();
+</script>
+</body>
+</html>

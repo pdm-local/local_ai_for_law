@@ -1,0 +1,31 @@
+/* ─── LAYOUT ROOT ──────────────────────────────────────── */
+body {
+  display:flex; overflow:hidden;
+  background:var(--bg); color:var(--text);
+  font-family:var(--font);
+  font-size: var(--base-fs); line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  font-feature-settings:"kern" 1;
+  text-rendering:optimizeLegibility;
+  /* Mobile: prevent text size inflation */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+::selection { background:var(--accent-dim); color:var(--text); }
+
+/* ─── SCROLLBAR ────────────────────────────────────────── */
+::-webkit-scrollbar              { width:5px; height:5px; }
+::-webkit-scrollbar-track        { background:transparent; }
+::-webkit-scrollbar-thumb        { background:var(--border2); border-radius:3px; }
+::-webkit-scrollbar-thumb:hover  { background:var(--accent-glow); }
+
+/* ─── FOCUS RING (a11y) ──────────────────────────────── */
+/* One ring for every control, shown on keyboard use only (the token is --ring). */
+:focus { outline:none; }
+:focus-visible { outline:none; box-shadow:var(--ring); }
+
+/* ─── FORM FIELDS GLOBAL ─────────────────────────────── */
+input, select, textarea {
+  font-family: inherit;
+  letter-spacing: inherit;
+}

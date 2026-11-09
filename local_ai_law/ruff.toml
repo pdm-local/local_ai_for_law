@@ -1,0 +1,15 @@
+# Lint config — run: ruff check .
+target-version = "py311"
+extend-exclude = ["venv", "static", "frontend", "data", "uploads"]
+
+[lint]
+select = ["F", "E9", "B", "PLE"]
+ignore = [
+    # FastAPI idiom: Depends()/File() in argument defaults
+    "B008",
+    # zip() without strict= — fine for the short parallel lists used here
+    "B905",
+    # Loop-variable closures: all flagged lambdas are awaited within the same
+    # iteration (routes/chat.py), so the capture is safe
+    "B023",
+]

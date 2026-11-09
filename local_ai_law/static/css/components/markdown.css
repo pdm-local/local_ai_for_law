@@ -1,0 +1,25 @@
+/* Markdown */
+.md h1,.md h2,.md h3 { font-weight:700; margin:.65em 0 .3em; color:var(--text); }
+.md h1{font-size:1.18rem}.md h2{font-size:1.04rem}.md h3{font-size:.95rem}
+.md p { margin:.3em 0; line-height:1.65; }
+.md ul,.md ol { margin:.3em 0 .3em 1.3em; }
+.md li { margin:.15em 0; line-height:1.6; }
+.md code {
+  background:var(--card2); border:1px solid var(--border);
+  padding:.1em .35em; border-radius:4px;
+  font-size:.93em; color:var(--info);
+  font-family:var(--mono);
+}
+.md pre {
+  background:var(--bg); border:1px solid var(--border2);
+  border-radius:8px; padding:.7em 1em; overflow-x:auto; margin:.45em 0;
+}
+.md pre code { background:none; border:none; padding:0; font-size:.93em; color:inherit; }
+.md strong   { color:var(--text); font-weight:700; }
+.md em       { color:var(--text2); }
+.md blockquote { border-left:3px solid var(--accent); padding-left:.8em; color:var(--text2); margin:.4em 0; }
+.md table    { border-collapse:collapse; width:100%; margin:.5em 0; font-size:.93em; }
+.md th,.md td{ border:1px solid var(--border); padding:.32em .6em; }
+.md th       { background:var(--card2); font-weight:600; color:var(--text); }
+.md a        { color:var(--accent-text); text-decoration:underline; }
+.md hr       { border:none; border-top:1px solid var(--border); margin:.6em 0; }

@@ -1,0 +1,64 @@
+# Build-context filter for the DEV image (Dockerfile). Keeps the image lean and,
+# critically, guarantees `COPY . .` never bakes in a secret, a credential store,
+# prior tenant data, or an internal-only document. The appliance build uses its
+# own Dockerfile.appliance.dockerignore (which keeps deploy/ollama-bundle/).
+
+# ── VCS / Python / venv / caches ──────────────────────────────────────────────
+.git/
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+
+# ── Secrets & per-instance credentials — MUST never be baked into an image ────
+.env
+.env.*
+!.env.example
+.jwt_secret
+users.json
+groups.json
+settings.json
+secrets.json
+audit.log
+certs/
+backup_bundle/
+
+# ── Runtime tenant data (users, uploads, vector store, summaries, jobs) ───────
+data/
+rag_db/
+uploads/
+chat_history/
+overviews/
+doc_summaries/
+flashcards/
+*.db
+*.db-shm
+*.db-wal
+
+# ── Internal-only docs & planning — never ship to a client ────────────────────
+businessplan.md
+CLAUDE.md
+IMPROVEMENTS.md
+future_improvements.md
+PLAN.md
+
+# ── Logs / pids / editor & tool state ─────────────────────────────────────────
+*.log
+logs/
+*.pid
+.agents/
+.codex/
+.claude/
+.vscode/
+.idea/
+
+# ── Build output / heavy dirs not needed in the app image ─────────────────────
+dist/
+build/
+frontend/node_modules/
+frontend/dist/
+deploy/ollama-bundle/

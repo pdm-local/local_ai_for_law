@@ -1,0 +1,23 @@
+/* ─── BUTTONS ──────────────────────────────────────────── */
+.btn {
+  display:inline-flex; align-items:center; justify-content:center; gap:5px;
+  padding:7px 13px; border-radius:var(--radius); border:none;
+  font-size:var(--fs-xs); font-weight:600; cursor:pointer; white-space:nowrap;
+  transition:all .15s ease; font-family:inherit;
+}
+.btn-primary   { background:var(--accent); color:var(--on-accent); }
+.btn-primary:hover { background:var(--accent-h); box-shadow:0 2px 12px var(--accent-glow); }
+.btn-secondary { background:var(--card2); color:var(--text2); border:1px solid var(--border); }
+.btn-secondary:hover { background:var(--border); color:var(--text); border-color:var(--border2); box-shadow:var(--shadow-xs); }
+.btn-danger    { background:var(--danger-solid); color:var(--paper); border:1px solid var(--danger-solid); }
+.btn-danger:hover { background:var(--danger-solid-h); border-color:var(--danger-solid-h); }
+/* A trigger for a destructive step: quiet on the page, because the step itself is
+   confirmed in the dialog, where the solid danger button lives. */
+.btn-danger-quiet { background:transparent; color:var(--red); border:1px solid var(--red-line); }
+.btn-danger-quiet:hover { background:var(--red-dim); }
+.btn-ghost     { background:transparent; color:var(--text2); }
+.btn-ghost:hover { background:var(--card2); color:var(--text); }
+.btn-ghost.active { background:var(--accent-dim); color:var(--accent-text); }
+.btn-sm        { padding:5px 9px; font-size:var(--fs-xs); border-radius:var(--radius-sm); }
+.btn-icon      { padding:6px; border-radius:var(--radius); }
+.btn:disabled  { opacity:.4; cursor:not-allowed; pointer-events:none; }

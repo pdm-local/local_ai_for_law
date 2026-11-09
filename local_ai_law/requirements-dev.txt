@@ -1,0 +1,12 @@
+# Dev/test-only dependencies. Install with:
+#   venv/bin/pip install -r requirements-dev.txt
+# Then run the suite:
+#   PYTHONPATH=<repo-parent> venv/bin/python -m pytest tests/ -q
+#
+# httpx powers starlette's TestClient (used by tests/test_auth.py). It is already
+# pulled in by the app stack, but pin it here so the test env is reproducible.
+pytest>=8.0
+httpx>=0.27
+# ruff is the linter (config in ruff.toml): `venv/bin/ruff check .` — catches unused
+# imports / dead code / bug-prone patterns before they ship.
+ruff>=0.6

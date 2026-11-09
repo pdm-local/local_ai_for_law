@@ -1,0 +1,33 @@
+# Hardening drop-in for the Ollama service on the appliance.
+#
+# Rendered + installed by scripts/provision.sh to:
+#     /etc/systemd/system/ollama.service.d/hardening.conf
+# (placeholders __LIKE_THIS__ are substituted; re-run provision.sh to regenerate.)
+#
+# WHY: Ollama is ONLY a model server. The app sends it prompt text over loopback and gets text
+# back — it has no reason or code path to read the firm's documents. This drop-in makes that a
+# structural guarantee: Ollama cannot see the app's data, cannot be reached off-box, and can write
+# nowhere except its own model store. Defense in depth behind the per-user isolation in the app.
+[Service]
+# 1) NETWORK WALL — loopback only. The app reaches Ollama at 127.0.0.1:11434; nothing off the box
+#    can. (The build box ships as 0.0.0.0 — this overrides it to localhost.)
+Environment=OLLAMA_HOST=127.0.0.1:11434
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+# 2) FILESYSTEM WALL — Ollama cannot see /home or /root, where the app keeps data/<user>/.
+#    Everything is read-only except its own model store; it can touch nothing else on disk.
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=__OLLAMA_MODELS__
+#    NOTE: keep the model store OUTSIDE /home (e.g. /usr/share/ollama or a data drive). If it must
+#    live under /home, change ProtectHome to "read-only" so ReadWritePaths can re-expose it.
+
+# 3) PRIVILEGE/KERNEL WALL — standard sandboxing. (Do NOT set PrivateDevices — Ollama needs the
+#    /dev/nvidia* GPU devices.)
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+LockPersonality=true
+RestrictRealtime=true

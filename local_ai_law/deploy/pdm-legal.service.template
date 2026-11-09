@@ -1,0 +1,61 @@
+# systemd unit template for the pdm Legal Workspace appliance.
+#
+# DO NOT edit /etc/systemd/system/pdm-legal.service by hand — it is rendered from this
+# template by scripts/provision.sh (placeholders __LIKE_THIS__ are substituted). Re-run
+# provision.sh to regenerate after a move/upgrade.
+#
+# Why a service (not nohup/tmux/a shell): the app MUST outlive any login session and come
+# back after a reboot or crash. Tying it to a shell is how a benchmark got killed mid-run.
+[Unit]
+Description=pdm Legal Workspace (local-first legal RAG)
+Documentation=file://__APP_DIR__/README.md
+# Ollama is the model backend; start after it (and the network) are up. The "ollama.service"
+# dependency is best-effort — it is ignored if Ollama is installed some other way.
+After=network-online.target ollama.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Run as an unprivileged user — NEVER root. provision.sh refuses to render root here.
+User=__USER__
+Group=__GROUP__
+WorkingDirectory=__APP_DIR__
+
+# Environment. RAG_HOST defaults to 127.0.0.1 (localhost-only) for safety; set it to the
+# LAN IP only behind a TLS reverse proxy (see scripts/gen-cert.sh). The data dir and users
+# store are kept on the box; OLLAMA_HOST points at the local model server.
+Environment=PYTHONPATH=__PYTHONPATH__
+Environment=OLLAMA_HOST=__OLLAMA_HOST__
+Environment=RAG_DATA_DIR=__DATA_DIR__
+Environment=RAG_USERS_FILE=__USERS_FILE__
+Environment=RAG_HOST=__BIND_HOST__
+Environment=RAG_PORT=__PORT__
+# Names the firm reaches the box by (comma separated). Loopback, a bare IP and this
+# machine's hostname always work; any other Host is refused (services/guard.py).
+#Environment=PDM_HOSTS=law.firm.local
+ExecStart=__APP_DIR__/venv/bin/python -m uvicorn app:app --host __BIND_HOST__ --port __PORT__
+
+# Resilience: auto-restart on crash; survive reboots via the [Install] section below.
+Restart=always
+RestartSec=3
+TimeoutStopSec=20
+
+# ── Hardening (defense in depth; the app only needs to read its tree and write its data) ──
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectControlGroups=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+# The app writes only under its data dir and its own working tree (chroma, .jwt_secret,
+# __pycache__). Everything else stays read-only.
+ReadWritePaths=__DATA_DIR__ __APP_DIR__
+# Network: local only — no outbound internet is needed (Ollama is on loopback). This keeps
+# the "nothing leaves the building" promise even if a dependency tried to phone home.
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

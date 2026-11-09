@@ -1,0 +1,176 @@
+/* ─── TOKENS ───────────────────────────────────────────────────────────────
+ * Every colour in the app comes from here, and every one of these comes from the
+ * pdm.ai palette in palettes.css (`--p-*`, written as `r g b` triples). A preset is
+ * picked by data-theme on <html>: midnight (default), daylight (its light pair), graphite,
+ * ivory, slate, forest, paper, contrast. No rule anywhere else may write a colour literal.
+ *
+ * Mixed shades use color-mix so they stay opaque: a hover surface that showed the
+ * page through would look different on every surface it is drawn on. */
+@import url('palettes.css');
+
+:root {
+  /* Surfaces */
+  --bg:           rgb(var(--p-bg));
+  --surface:      rgb(var(--p-bg2));
+  --card:         rgb(var(--p-bg3));
+  --card-hover:   color-mix(in srgb, rgb(var(--p-bg3)), rgb(var(--p-ink)) 5%);
+  --card2:        color-mix(in srgb, rgb(var(--p-bg3)), rgb(var(--p-ink)) 3%);
+  --bg-alt:       rgb(var(--p-bg3));
+  --border:       rgb(var(--p-line));
+  --border2:      color-mix(in srgb, rgb(var(--p-line)), rgb(var(--p-ink)) 14%);
+  --paper:        rgb(var(--p-paper));
+
+  /* Text */
+  --text:         rgb(var(--p-ink));
+  --text2:        rgb(var(--p-ink2));
+  /* ink3 nudged 20% toward ink: the palette measured it on bg3 only, and here it is
+     also drawn on a hover surface and on the accent tint of an active row. */
+  --text3:        color-mix(in srgb, rgb(var(--p-ink3)), rgb(var(--p-ink)) 20%);
+
+  /* Accent */
+  --accent:       rgb(var(--p-accent));
+  --accent-h:     color-mix(in srgb, var(--accent), rgb(var(--p-scrim)) 14%);
+  --accent2:      rgb(var(--p-accent2));
+  --accent-dim:   rgb(var(--p-accent) / 0.14);
+  --accent-glow:  rgb(var(--p-accent) / 0.28);
+  --on-accent:    rgb(var(--p-on-accent));
+  /* Accent as text on a surface. On the dark presets accent2 is the lighter of the
+     two and the one that clears 4.5 to 1; on the light presets it is accent. */
+  --accent-text:  color-mix(in srgb, rgb(var(--p-accent2)), rgb(var(--p-ink)) 20%);
+
+  /* Status, for state only (indexed, failed, pending), never decoration. Text
+     colours: each clears 4.5 to 1 on every surface of its scheme. */
+  --st-green:     74 222 128;
+  --st-yellow:    251 191 36;
+  --st-red:       252 135 135;
+  --st-info:      125 211 252;
+  --green:        rgb(var(--st-green));
+  --yellow:       rgb(var(--st-yellow));
+  --red:          rgb(var(--st-red));
+  --info:         rgb(var(--st-info));
+  --green-dim:    rgb(var(--st-green) / 0.12);
+  --yellow-dim:   rgb(var(--st-yellow) / 0.12);
+  --red-dim:      rgb(var(--st-red) / 0.12);
+  --info-dim:     rgb(var(--st-info) / 0.12);
+  --green-line:   rgb(var(--st-green) / 0.32);
+  --yellow-line:  rgb(var(--st-yellow) / 0.32);
+  --red-line:     rgb(var(--st-red) / 0.36);
+  /* A solid danger button: white text on it clears 4.5 to 1 in every preset. */
+  --danger-solid: rgb(185 28 28);
+  --danger-solid-h: rgb(153 27 27);
+
+  /* Categories: a matter's colour, a graph node's type. Fills and dots only, never
+     text. The same in every preset. */
+  --cat-1: rgb(99 102 241);  --cat-2: rgb(139 92 246); --cat-3: rgb(14 165 233);
+  --cat-4: rgb(16 185 129);  --cat-5: rgb(245 158 11); --cat-6: rgb(244 63 94);
+  --cat-7: rgb(20 184 166);  --cat-8: rgb(249 115 22);
+  --node-wiki: var(--cat-2); --node-doc: var(--cat-4); --node-concept: var(--cat-8);
+  --node-policy: var(--cat-6); --node-paper: var(--cat-3); --node-protocol: var(--cat-7);
+  --node-procedure: var(--cat-5); --node-other: var(--text3); --edge: var(--border2);
+
+  /* Highlighter colours for annotations, as triples so a mark can be translucent. */
+  --hl-yellow: 251 191 36; --hl-green: 52 211 153; --hl-blue: 96 165 250;
+  --hl-pink: 244 114 182;  --hl-orange: 251 146 60;
+
+  /* Overlays */
+  --scrim:        rgb(var(--p-scrim) / 0.6);
+  --scrim-deep:   rgb(var(--p-scrim) / 0.88);
+  --on-scrim:     rgb(var(--p-paper));
+  --on-scrim-dim: rgb(var(--p-paper) / 0.75);
+  --glass:        rgb(var(--p-paper) / 0.14);
+  --glass-h:      rgb(var(--p-paper) / 0.26);
+
+  /* Shadows */
+  --shadow-xs:    0 1px 3px rgb(var(--p-scrim) / 0.25);
+  --shadow-sm:    0 2px 8px rgb(var(--p-scrim) / 0.32);
+  --shadow:       0 4px 20px rgb(var(--p-scrim) / 0.45);
+  --shadow-lg:    var(--p-lift);
+
+  /* Type: one family, one scale. The smallest text is 13px. */
+  --font:         var(--p-font);
+  --mono:         var(--p-mono);
+  --fs-xs:        13px;
+  --fs-sm:        14px;
+  --fs-md:        15px;
+  --fs-lg:        18px;
+  --fs-xl:        22px;
+  --fs-2xl:       28px;
+  --base-fs:      14px;
+
+  /* Space: a 4px step. */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px;
+
+  /* Shape: every control (button, input, chip) takes one radius; cards and panels
+     the larger one. One border weight. */
+  --radius-sm:    8px;
+  --radius:       8px;
+  --radius-md:    8px;
+  --radius-lg:    12px;
+  --radius-xl:    16px;
+  --bw:           1px;
+  --ring:         0 0 0 3px rgb(var(--p-accent2) / 0.55);
+
+  /* Phone: the notch and the home bar. */
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+}
+
+/* The light presets: darker status text, and the accent itself as text. Every text
+   token here was measured against bg, bg2, bg3, card2, the hover surface and the
+   status and accent tints over each: 4.5 to 1 or better in all six presets. */
+[data-theme='daylight'], [data-theme='paper'], [data-theme='contrast'], [data-theme='ivory'] {
+  --st-green:     15 100 60;
+  --st-yellow:    125 72 0;
+  --st-red:       165 30 20;
+  --st-info:      2 85 135;
+  --text3:        color-mix(in srgb, rgb(var(--p-ink3)), rgb(var(--p-ink)) 25%);
+  --accent-text:  color-mix(in srgb, rgb(var(--p-accent)), rgb(var(--p-ink)) 30%);
+  --accent-h:     color-mix(in srgb, var(--accent), rgb(var(--p-scrim)) 18%);
+  --shadow-xs:    0 1px 3px rgb(var(--p-scrim) / 0.06);
+  --shadow-sm:    0 2px 8px rgb(var(--p-scrim) / 0.07);
+  --shadow:       0 2px 12px rgb(var(--p-scrim) / 0.08);
+  --shadow-lg:    0 12px 32px rgb(var(--p-scrim) / 0.14);
+}
+
+/* The two quiet presets: status keeps its meaning but drops the neon, and matters and
+   graph nodes take muted tones, so the one strong thing on the page is the ink. Fills
+   and dots only, like the categories above; status text clears 4.5 to 1 on every
+   surface of its preset. */
+[data-theme='graphite'] {
+  --st-green: 140 200 158; --st-yellow: 214 184 120; --st-red: 232 146 136; --st-info: 150 182 214;
+  --cat-1: rgb(128 140 178); --cat-2: rgb(150 136 176); --cat-3: rgb(118 160 184);
+  --cat-4: rgb(122 166 142); --cat-5: rgb(190 164 112); --cat-6: rgb(186 128 128);
+  --cat-7: rgb(116 164 158); --cat-8: rgb(184 146 112);
+  --node-doc: rgb(var(--p-ink)); --node-wiki: var(--cat-1); --node-concept: rgb(var(--p-ink3));
+  --edge: color-mix(in srgb, rgb(var(--p-line)), rgb(var(--p-ink)) 22%);
+  --ring: 0 0 0 3px rgb(var(--p-ink) / 0.35);
+}
+[data-theme='ivory'] {
+  --cat-1: rgb(96 108 150); --cat-2: rgb(120 104 150); --cat-3: rgb(84 128 156);
+  --cat-4: rgb(84 132 108); --cat-5: rgb(160 130 72); --cat-6: rgb(160 96 96);
+  --cat-7: rgb(76 130 124); --cat-8: rgb(160 112 76);
+  --node-doc: rgb(var(--p-ink)); --node-wiki: var(--cat-1); --node-concept: rgb(var(--p-ink3));
+  --edge: color-mix(in srgb, rgb(var(--p-line)), rgb(var(--p-ink)) 18%);
+  --ring: 0 0 0 3px rgb(var(--p-ink) / 0.3);
+}
+
+/* White on these two accents measured 4.47 and 4.01 to 1: darkened until it clears 4.5. */
+[data-theme='slate']  { --accent: color-mix(in srgb, rgb(var(--p-accent)), rgb(var(--p-scrim)) 6%); }
+[data-theme='forest'] { --accent: color-mix(in srgb, rgb(var(--p-accent)), rgb(var(--p-scrim)) 16%); }
+
+/* ─── DENSITY ─────────────────────────────────────────── */
+html[data-density="compact"]      { --base-fs: 13px; }
+html[data-density="comfortable"]  { --base-fs: 14px; }
+html[data-density="cozy"]         { --base-fs: 15px; }
+
+/* ─── MOTION ──────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

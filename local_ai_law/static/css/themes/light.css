@@ -1,0 +1,18 @@
+/* ─── LIGHT PRESETS (ivory, daylight, paper, contrast) ─────────────────────────────
+ * The colours themselves come from palettes.css and 00-tokens.css. This file only
+ * holds what a light page does differently in shape: flatter surfaces, a border on
+ * secondary buttons, a hairline shadow on cards. No colour literal belongs here. */
+:is([data-theme="daylight"], [data-theme="paper"], [data-theme="contrast"], [data-theme="ivory"]) body { background:var(--bg); color:var(--text); }
+
+:is([data-theme="daylight"], [data-theme="paper"], [data-theme="contrast"], [data-theme="ivory"]) .md pre { background:var(--card); border-color:var(--border); }
+:is([data-theme="daylight"], [data-theme="paper"], [data-theme="contrast"], [data-theme="ivory"]) .md pre code { color:inherit; }
+
+:is([data-theme="daylight"], [data-theme="paper"], [data-theme="contrast"], [data-theme="ivory"]) #sidebar { background:var(--surface); }
+:is([data-theme="daylight"], [data-theme="paper"], [data-theme="contrast"], [data-theme="ivory"]) .btn-secondary { border-color:var(--border2); }
+:is([data-theme="daylight"], [data-theme="paper"], [data-theme="contrast"], [data-theme="ivory"]) .g-card { box-shadow:var(--shadow-xs); }
+:is([data-theme="daylight"], [data-theme="paper"], [data-theme="contrast"], [data-theme="ivory"]) .grp-header,
+:is([data-theme="daylight"], [data-theme="paper"], [data-theme="contrast"], [data-theme="ivory"]) .chat-toolbar,
+:is([data-theme="daylight"], [data-theme="paper"], [data-theme="contrast"], [data-theme="ivory"]) .modal-box,
+:is([data-theme="daylight"], [data-theme="paper"], [data-theme="contrast"], [data-theme="ivory"]) #src-text { background:var(--surface); }
+:is([data-theme="daylight"], [data-theme="paper"], [data-theme="contrast"], [data-theme="ivory"]) .chat-input-inner { background:var(--surface); border-color:var(--border2); }
+:is([data-theme="daylight"], [data-theme="paper"], [data-theme="contrast"], [data-theme="ivory"]) .add-card { border-color:var(--border2); }

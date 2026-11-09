@@ -1,0 +1,45 @@
+/* ============================================================================
+   responsive/tablet.css  —  TABLET module  (769px – 1024px)
+   ----------------------------------------------------------------------------
+   Loaded after app.css (and before phone.css) so it layers on top of the base.
+   The base layout in app.css already narrows the sidebar (<=1100) and stacks
+   the split panels (<=900); this module is the tablet-specific *polish*:
+   comfortable grids, touch targets and modal sizing for a tablet held in the
+   room. The mobile drawer/bottom-bar only engages at <=768 (phone.css).
+   Keep additive — do not duplicate phone rules here.
+   ========================================================================== */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+
+  /* No accidental horizontal page scroll on a tablet */
+  html, body { max-width: 100%; overflow-x: hidden; }
+
+  /* Group cards: two comfortable columns instead of cramped auto-fill */
+  .groups-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+
+  /* Dashboard quick-action tiles: 2-up reads better than 3-up on tablet */
+  .action-grid,
+  .dash-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  /* Stat tiles: keep them readable, 3 across */
+  .stats-row { grid-template-columns: repeat(3, 1fr); }
+
+  /* Roomier nav touch targets for finger use while the sidebar stays visible */
+  .nav-btn { min-height: 42px; }
+  .sb-groups .nav-btn { min-height: 40px; }
+
+  /* Modals: cap width so they don't stretch edge-to-edge on a wide tablet */
+  .modal-box { max-width: min(640px, 92vw); }
+  .modal-box[style*="max-width:760px"],
+  .modal-box[style*="max-width:640px"] { max-width: 92vw; }
+
+  /* Wide tables stay usable: let them scroll inside their container */
+  .tbl-wrap, .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tbl { min-width: 560px; }
+
+  /* Settings: use the full width on a tablet (no narrow desktop column) */
+  .settings-body { max-width: 100%; }
+
+  /* Concept map: a touch-friendlier control row */
+  #ktab-map > div:first-child { gap: 8px; }
+}

@@ -1,0 +1,7 @@
+# Optional: server-side PDF reports. NOT installed in the appliance or the desktop build.
+#   venv/bin/pip install -r requirements-pdf.txt   (also needs the Pango system libraries)
+#
+# WeasyPrint itself is BSD-3-Clause, but it pulls in pyphen, whose hyphenation dictionaries
+# are GPL/LGPL, and it links Pango (LGPL). The default build therefore leaves it out and serves
+# the matter report as HTML, which the reader prints to PDF (routes/groups.py).
+weasyprint>=62.0
