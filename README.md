@@ -5,7 +5,7 @@ questions about them and get answers that cite the document and page they come f
 language model runs locally through [Ollama](https://ollama.com), so no document, question
 or answer leaves the machine.
 
-Made by Daniel Mihai Pocatilu at [pdm.ai](https://www.pdmzerotrustbusiness.com), 21 October
+Made by Daniel-Mihai Pocatilu at [pdm.ai](https://www.pdmzerotrustbusiness.com), 21 October
 2026.
 
 ## Who it is for
